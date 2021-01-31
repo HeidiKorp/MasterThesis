@@ -1,4 +1,7 @@
 from sklearn.preprocessing import LabelEncoder
+import numpy as np
+import random
+import math
 
 def normalizeFeature(data, feature, newCol):
     le = LabelEncoder()
@@ -11,28 +14,47 @@ def unNormalize(mapping, res):
             return dest
 
 
-def pad(block, n):
-    for k in range(n):
-        block.append(block[-1])
-    return block
-
-    
-def blockify(arr, n):
-    counter = 0
-    res = []
-    prev_id = -1
-
-    for i in range(len(arr)):
-        if prev_id == arr[i] and counter < n:
-            res[-1].append(arr[i]) 
-            counter += 1
+def split_sequences(data, n_steps, track_id):
+    X, y = list(), list()
+    for i in range(len(data)):
+        # find the end of this pattern
+        end_ix = i + n_steps
+        # check if we are beyond the dataset
+        if end_ix > len(data):
+            break
+        elif i == 0 and data[0][track_id] != data[1][track_id]:
+            continue
+        # If the track_id of current instance is not the same as the one of the previous instance
+        elif data[end_ix-1][track_id] != data[end_ix-2][track_id]:
+            i = end_ix
         else:
-            if prev_id != arr[i] and counter > 0:
-                pad(res[-1], n-counter)
-            res.append([arr[i]])
-            counter = 1
-            prev_id = arr[i]
+            seq_x, seq_y = data[i:end_ix, :-2], data[end_ix-1, -1]
+            X.append(seq_x)
+            y.append(seq_y)
+    X = np.array(X)
+    y = np.array(y)
+    return X.astype(np.float), y.astype(np.float)
 
-        if i == len(arr) - 1 and counter < n:  # If it it the last block and there are less than 5 records
-            pad(res[-1], n-counter)
-    return res
+
+def get_train_val_test(data, train_size, val_size, test_size):
+    # Get all unique values of column 'ObjectId'
+    unique_tracks = data['ObjectId'].unique()
+    nr_tracks = len(unique_tracks)
+
+    # Get train, val, test size in tracks
+    train_z = round(nr_tracks * train_size)
+    val_z = round(nr_tracks * val_size) + train_z
+    test_z = round(nr_tracks * test_size) + val_z
+    # Shuffle tracks
+    random.shuffle(unique_tracks)
+    # Get row indexes where ObjectId equals the n first track numbers
+    # n equals the number of train tracks
+    train_idx = data.index[data['ObjectId'].isin(unique_tracks[:train_z])].tolist()
+    train = data.iloc[train_idx]
+
+    val_idx = data.index[data['ObjectId'].isin(unique_tracks[train_z:val_z])].tolist()
+    val = data.iloc[val_idx]
+
+    test_idx = data.index[data['ObjectId'].isin(unique_tracks[val_z:])].tolist()
+    test = data.iloc[test_idx]
+    return train, val, test

@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-# import tensorflow as tf
+import tensorflow as tf
 from keras.models import Sequential
 from keras.layers import Dense, LSTM, Dropout
 # from tf.keras.experimental import PeepholeLSTMCell
@@ -8,15 +8,17 @@ from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from math import floor
 
-from .helper import blockify
+from helper import get_train_val_test, split_sequences
 
 # https://towardsdatascience.com/building-a-deep-learning-model-using-keras-1548ca149d37
+# https://machinelearningmastery.com/how-to-develop-lstm-models-for-time-series-forecasting/
 # https://www.w3schools.com/python/python_classes.asp
 # https://keras.io/api/models/model/
 
 class Model:
 
-    def __init__(self, X, y,
+    def __init__(self, 
+                    data,
                     dropout, 
                     recurrent_width, 
                     input_width,
@@ -26,50 +28,36 @@ class Model:
                     test_size,
                     network_length,
                     epochs):
-        if train_size < 1:
-            train_size = floor(len(X) * train_size)
-            validation_size = floor(len(X) * validation_size)
-            test_size = floor(len(X) * test_size)
-        print("Train: ", train_size, " val: ", validation_size, " test: ", test_size)
-        print("Train shape: ", X.shape)
         self.dropout = dropout
         self.input_width = input_width
         self.lr = lr
         self.recurrent_width = recurrent_width
-        self.val_size = validation_size
-        self.train_size = train_size
-        self.network_length = network_length
         self.epochs = epochs
-        # Make a new function to split the data
-        # It must be done based on the track
+        self.network_length = network_length
 
-        self.X, self.y = self.reshapeInput(X, y, network_length)
-        print("Shapee: ", self.X.shape)
-        print("Shapee3: ", self.y.shape)
-        print("Actual: ", self.X)
-        print("")
-        print("")
-        print(len(self.X))
-        for i in self.X:
-            print(len(i))
+        # Split the data to train, validation and test sets
+        self.train_data, self.val_data, self.test_data = \
+            get_train_val_test(data, train_size, validation_size, test_size)
+        # # Reshape the data based on network length (5, 10, 25)
+        self.X_train, self.y_train = self.reshape_input(self.train_data, network_length,)
+        self.X_val, self.y_val = self.reshape_input(self.val_data, network_length)
+        self.X_test, self.y_test = self.reshape_input(self.test_data, network_length)
 
-        # self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-        #         X[1:], y[1:], train_size=train_size+validation_size, test_size=test_size, random_state=42)
-
-        
-        # TODO Create model
         self.model = None
 
-    def getModel(self):
+
+    def get_model(self):
+        n_features = self.X_train.shape[2]
         model = Sequential()
 
         # add model layers
-        model.add(Dense(256, activation='relu', input_shape=self.X_train.shape))
-        model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(5, 4)))
-        model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(5, 4)))
-        model.add(LSTM(512, activation='relu', input_shape=(5, 4)))
+        # model.add(Dense(256, activation='relu', input_shape=self.X_train.shape))
+        model.add(Dense(256, activation='relu'))
+        model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(self.network_length, n_features)))
+        model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(self.network_length, n_features)))
+        model.add(LSTM(512, activation='relu', input_shape=(self.network_length, n_features)))
         model.add(Dropout(0.5))
-        model.add(Dense(3, activation='softmax'))  # 3 is the number of classes
+        model.add(Dense(1, activation='softmax'))  # 3 is the number of classes
 
         # compile model using mse as a measure of model performance
         opt = Adam(learning_rate=self.lr)
@@ -78,18 +66,17 @@ class Model:
         return model
 
 
-    def setModel(self):
-        self.model = self.getModel()
+    def set_model(self):
+        self.model = self.get_model()
+
 
     def train(self):
-        # Preprocess the input data
-        self.reshapeInput()
-
-        history = self.model.fit(self.X_train, 
+        history = self.model.fit(
+                self.X_train, 
                 self.y_train, 
-                epochs=20, 
-                validation_data=(self.X_val, self.y_val),
-                batch_size=5)
+                epochs=2, 
+                validation_data=(self.X_val, self.y_val)
+                )
         return history
 
 
@@ -97,64 +84,13 @@ class Model:
         return self.model.predict(self.X_test)
 
 
-    def reshapeInput(self, X, y, k):
-        # k = network length
-        # split data based on self.network_length (5, 10, 25)
-        # the result should be a 3d data
-        # n samples (tracks), net_len samples (grouped data in track), features
+    def reshape_input(self, X, k):
+        # Get the index of OdjectId
         col_names = list(X.columns)
-        nr_tracks = len(X.ObjectId.unique())
         idx_obj_id = col_names.index('ObjectId')
-
-        # print("X here: \n", X)
-
+        # Convert pandas dataFrame to numpy array
         X = X.to_numpy()
-        y = y.to_numpy()
-        new_X = []
-        new_y = []
-        counter = 0
-        prev_id = -1
-
-        # Sort by tracks and if the nr of data points in track does not divide by 5,
-        # apply padding by repeating the last known data point
-
-        for i in range(len(X)):
-            print("Prev id is: ", prev_id)
-            print("New X: ", new_X)
-            if counter == 0:
-                new_X.append([X[i][:idx_obj_id]])
-                new_y.append([y[i]])
-                counter += 1
-                prev_id = X[i][idx_obj_id]
-            elif prev_id != X[i][idx_obj_id]:
-                new_X[-1].append(new_X[-1][-1])
-                new_y[-1].append(new_y[-1][-1])
-                
-                if counter == k - 1: counter = 0
-                else: counter += 1
-                
-
-        for i in range(len(X)):
-            if i == 0:
-                new_X.append([])
-                new_y.append([])
-            if counter >= k:
-                new_X.append([])
-                new_y.append([])
-                counter = 0
-            new_X[-1].append(X[i][:idx_obj_id])
-            new_y[-1].append(y[i])
-            counter +=1
-
-        # for i in range(len(X)):
-        #     if X[i][idx_obj_id] != prev_id:
-        #         new_X.append([X[i][:idx_obj_id]])
-        #         new_y.append([y[i]])
-        #         prev_id = X[i][idx_obj_id]
-        #     else:
-        #         new_X[-1].append(X[i][:idx_obj_id])
-        #         new_y[-1].append(y[i])
-        return np.array(new_X), np.array(new_y)
+        return split_sequences(X, k, idx_obj_id)
 
 
     # def evaluate():
@@ -170,6 +106,3 @@ class Model:
     #     actual = self.y_test[:3]
     #     print("Predicted: ", predictions)
     #     print("Actual: ", actual)
-
-
-

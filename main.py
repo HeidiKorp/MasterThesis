@@ -1,7 +1,7 @@
 import pandas as pd
 
-from .helper import normalizeFeature
-from .model import Model
+from helper import normalizeFeature, blockify
+from model import Model
 
 
 def main():
@@ -9,8 +9,7 @@ def main():
     # Network lengths are: 5, 15 and 25 time-steps.
     # For each length, a new model must be created
     # Correlate to 0.2, 0.6 and 1 seconds in data
-    # train=4560, val=1658, test=2074, sum=8292. Why?
-    # train+val = 6218 ~ 75%
+    # train=4560, val=1658, test=2074, sum=8292
 
     # Train percentage: 55%
     # Val percentage: 20%
@@ -23,15 +22,12 @@ def main():
 
     # Input data should be with objectId
     data = pd.read_csv("../records/records_0-5000.csv", dtype='category')
-    X = data[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'ObjectId']]
-
+    # Map destination to a number
     mapping = normalizeFeature(data, 'destination', 'code')
-    print(mapping)
-
-
-    y = data['code']
-    model = Model(X.head(),        # X
-                    y.head(),      # y
+    # ObjectId is the trackId
+    sequence = data[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'ObjectId', 'code']]
+    # y = data['code']
+    model = Model(sequence,  
                     0.5,    # dropout
                     512,    # recurrent_width
                     256,    # input_width
@@ -41,9 +37,8 @@ def main():
                     0.25,   # test size
                     5,      # network length
                     20)     # epochs
-    # model.getModel()
-    # model.setModel()
-    # model.train()
+    model.set_model()
+    model.train()
 
 if __name__ == "__main__":
     main()
