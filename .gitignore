@@ -1,2 +1,4 @@
 .ipynb_checkpoints
 jupyter
+test
+__pycache__/
