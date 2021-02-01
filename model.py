@@ -73,7 +73,7 @@ class Model:
         
         n_features = self.X_train.shape[2]
 
-        inputs = Input(batch_shape=self.X_train.shape)
+        inputs = Input(shape=(self.network_length, n_features,))
         dense = Dense(256, activation='relu', input_shape=(self.network_length, n_features,))(inputs)
         # Create a stack of LSTM with Peephole connection layers
         cells = [tfa.rnn.PeepholeLSTMCell(512, activation='relu') for _ in range(3)]
