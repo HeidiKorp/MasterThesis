@@ -1,6 +1,6 @@
 import pandas as pd
 
-from helper import normalizeFeature, blockify
+from helper import normalizeFeature
 from model import Model
 
 
@@ -38,7 +38,11 @@ def main():
                     5,      # network length
                     20)     # epochs
     model.set_model()
+
+    # model.get_model()
+    # model.compile_model_functional()
     model.train()
+    # model.evaluate()
 
 if __name__ == "__main__":
     main()

@@ -1,9 +1,10 @@
 import pandas as pd
 import numpy as np
+import tensorflow_addons as tfa
 import tensorflow as tf
+import keras
 from keras.models import Sequential
-from keras.layers import Dense, LSTM, Dropout
-# from tf.keras.experimental import PeepholeLSTMCell
+from keras.layers import Dense, Dropout, LSTM, RNN, StackedRNNCells, Input
 from keras.optimizers import Adam
 from sklearn.model_selection import train_test_split
 from math import floor
@@ -43,16 +44,16 @@ class Model:
         self.X_val, self.y_val = self.reshape_input(self.val_data, network_length)
         self.X_test, self.y_test = self.reshape_input(self.test_data, network_length)
 
+        print("X train shape: ", self.X_train.shape)
         self.model = None
 
 
     def get_model(self):
         n_features = self.X_train.shape[2]
         model = Sequential()
-
+        
         # add model layers
-        # model.add(Dense(256, activation='relu', input_shape=self.X_train.shape))
-        model.add(Dense(256, activation='relu'))
+        model.add(Dense(256, activation='relu', input_shape=(self.network_length, n_features)))
         model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(self.network_length, n_features)))
         model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(self.network_length, n_features)))
         model.add(LSTM(512, activation='relu', input_shape=(self.network_length, n_features)))
@@ -62,12 +63,36 @@ class Model:
         # compile model using mse as a measure of model performance
         opt = Adam(learning_rate=self.lr)
         model.compile(optimizer=opt, loss='mean_squared_error')
-        # model.summary()
+        model.summary()
+        # return model
+
+        
+    def compile_model_functional(self):
+        # https://www.pyimagesearch.com/2019/10/28/3-ways-to-create-a-keras-model-with-tensorflow-2-0-sequential-functional-and-model-subclassing/
+        # https://stackoverflow.com/questions/54138205/shaping-data-for-lstm-and-feeding-output-of-dense-layers-to-lstm
+        
+        n_features = self.X_train.shape[2]
+
+        inputs = Input(batch_shape=self.X_train.shape)
+        dense = Dense(256, activation='relu', input_shape=(self.network_length, n_features,))(inputs)
+        # Create a stack of LSTM with Peephole connection layers
+        cells = [tfa.rnn.PeepholeLSTMCell(512, activation='relu') for _ in range(3)]
+        # Wrap the Peephole cells with RNN and set return_sequences=True
+        rnn = tf.keras.layers.RNN(cells, return_sequences=True)(dense)
+        dropout = Dropout(0.5)(rnn)
+        outputs = tf.keras.layers.Dense(1, activation='softmax')(dropout)
+        model = tf.keras.Model(inputs=inputs, outputs=outputs)
+
+        # compile model using mse as a measure of model performance
+        opt = Adam(learning_rate=self.lr)
+        model.compile(optimizer=opt, loss='mean_squared_error')
+        model.summary()
+
         return model
 
 
     def set_model(self):
-        self.model = self.get_model()
+        self.model = self.compile_model_functional()
 
 
     def train(self):
@@ -80,8 +105,14 @@ class Model:
         return history
 
 
-    def predict(self):
-        return self.model.predict(self.X_test)
+    def predict(self, n_samples):
+        # Generate predictions (probabilities -- the output of the last layer)
+        # on new data using 'predict'
+        print("Generate predictions for %s samples" % (n_samples))
+        predictions = model.predict(self.X_test[:n_samples])
+        actual = self.y_test[:n_samples]
+        print("Predicted: ", predictions)
+        print("Actual: ", actual)
 
 
     def reshape_input(self, X, k):
@@ -93,16 +124,7 @@ class Model:
         return split_sequences(X, k, idx_obj_id)
 
 
-    # def evaluate():
-    #     print("Evaluate on test data")
-    #     results = self.model.evaluate(self.X_test, self.y_test)
-    #     print("test loss, test acc: ", results)
-
-    #     # Generate predictions (probabilities -- the output of the last layer)
-    #     # on new data using 'predict'
-
-    #     print("Generate predictions for 3 samples")
-    #     predictions = model.predict(x_test[:3])
-    #     actual = self.y_test[:3]
-    #     print("Predicted: ", predictions)
-    #     print("Actual: ", actual)
+    def evaluate(self):
+        print("Evaluate on test data")
+        results = self.model.evaluate(self.X_test, self.y_test)
+        print("test loss, test acc: ", results)
