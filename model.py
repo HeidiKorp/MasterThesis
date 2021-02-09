@@ -7,7 +7,6 @@ from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, LSTM, RNN, StackedRNNCells, Input
 from keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
-from sklearn.model_selection import train_test_split
 from math import floor
 import matplotlib.pyplot as plt
 
@@ -98,16 +97,21 @@ class Model:
 
 
     def train(self):
-        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=200)
+        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=2)
         mc = ModelCheckpoint("models/best_model_destination_"+ str(self.network_length) +  ".h5", monitor='val_accuracy', 
                             mode='max', verbose=1, save_best_only=True)
         history = self.model.fit(
                 self.X_train, 
                 self.y_train, 
-                epochs=400, 
+                epochs=4, 
                 validation_data=(self.X_val, self.y_val),
                 callbacks=[es, mc]
                 )
+
+        hist_df = pd.DataFrame(history.history)
+        hist_json_file = "models/history_" + str(self.network_length) + ".json"
+        with open(hist_json_file, mode='w') as f:
+            hist_df.to_json(f)
         return history
 
 
@@ -139,15 +143,15 @@ class Model:
         _, train_acc = model.evaluate(x=self.X_train, y=self.y_train, verbose=0)
         _, test_acc = model.evaluate(x=self.X_test, y=self.y_test, verbose=0)
         print('Train: %.3f, Test: %.3f' % (train_acc, test_acc))
-        print("Loss: ", history.history['loss'])
-        print("Val loss: ", history.history['val_loss'])
+        print("Loss: ", history['loss'])
+        print("Val loss: ", history['val_loss'])
         # plot training history
-        plt.plot(history.history['loss'], label='train')
+        plt.plot(history['loss'], label='train')
         plt.xlabel("timesteps", fontsize=18)
         plt.ylabel("loss", fontsize=18)
         plt.legend()
         plt.savefig("models/train_loss_dest_" + str(self.network_length) + ".jpg")
-        plt.plot(history.history['val_loss'], label='test')
+        plt.plot(history['val_loss'], label='test')
         plt.xlabel("timesteps", fontsize=18)
         plt.ylabel("val_sloss", fontsize=18)
         plt.legend()
@@ -159,3 +163,6 @@ class Model:
 
     def get_best_saved_model(self):
         return load_model("models/best_model_destination_" + str(self.network_length) + ".h5")
+
+    def get_history(self):
+        return pd.read_json("models/history_" + str(self.network_length) + ".json", orient='records')

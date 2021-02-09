@@ -38,11 +38,13 @@ def main():
                     0.25,   # test size
                     5,      # network length
                     20)     # epochs
-    model.set_model()
+    # model.set_model()
 
-    # model.get_model()
-    # model.compile_model_functional()
-    hist = model.train()
+    # # model.get_model()
+    # # model.compile_model_functional()
+    # model.train()
+
+    hist = model.get_history()
 
     best_model = model.get_best_saved_model()
     model.evaluate(best_model, hist)

@@ -1,0 +1,9 @@
+name: thesis-dest
+dependencies:
+  - python=3.8
+  - numpy
+  - pandas
+  - keras
+  - matplotlib
+  - sklearn
+  - pip
