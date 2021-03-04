@@ -21,8 +21,8 @@ def main():
     # Test: 2074
 
     # Input data should be with objectId
-    data = pd.read_csv("../records/records_0-5000.csv", dtype='category')
-    # data = pd.read_csv("../intersections-dataset.csv", dtype='category')
+    # data = pd.read_csv("../records/records_0-5000.csv", dtype='category')
+    data = pd.read_csv("intersections-dataset.csv", dtype='category')
     # Map destination to a number
     mapping = normalizeFeature(data, 'destination', 'code')
     # ObjectId is the trackId
@@ -38,16 +38,16 @@ def main():
                     0.25,   # test size
                     5,      # network length
                     20)     # epochs
-    # model.set_model()
+    model.set_model()
 
     # # model.get_model()
     # # model.compile_model_functional()
-    # model.train()
+    model.train()
 
-    hist = model.get_history()
+    # hist = model.get_history()
 
-    best_model = model.get_best_saved_model()
-    model.evaluate(best_model, hist)
+    # best_model = model.get_best_saved_model()
+    # model.evaluate(best_model, hist)
 
 if __name__ == "__main__":
     main()

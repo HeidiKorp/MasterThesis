@@ -1,0 +1,12 @@
+python=3.8
+numpy
+pandas
+keras
+matplotlib
+sklearn
+pip
+tensorflow-gpu
+tensorflow_addons
+matplotlib~=3.3.4
+scikit-learn~=0.24.1
+h5py~=2.10.0

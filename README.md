@@ -4,12 +4,15 @@ The Five Roundabouts Dataset used in this project can be downloaded from [Five R
 
 # Environment
 
-## Setting up Anaconda
+## Anaconda vs python evironment
+There are two options for the environment: using Anaconda or making a simple python environment. The following sections will provide a tutorial for setting up either environment.
+
+### Setting up Anaconda
 We are going to use an Anaconda environment to build this project.
 
 First, download miniconda from [miniconda](https://docs.conda.io/en/latest/miniconda.html). If you are using Windows, select Python 3.8 and a 64-bit installer.
 
-## Setting up the environment
+### Setting up the environment
 - Clone the project from github repository. 
 - Run the environment.yml file with 
 ```
@@ -26,6 +29,37 @@ conda activate thesis-dest
 ```
 pip install -r requirements.txt
 ```
+
+## Python environment
+Run the following command to create a virtual environment called "thesis-dest"
+
+```
+python3 -m venv thesis-dest
+```
+
+Activate the environment using
+
+On macOS and Linux:
+```
+source thesis-dest/bin/activate
+```
+
+On Windows:
+```
+source .\thesis-dest\Scripts\activate
+```
+
+You can deactivate the environment using
+
+```
+deactivate
+```
+Install the required packages using
+```
+pip install -r requirements.txt
+```
+
+
 
 # Running the code
 - Make sure you have the dataset file in the environment folder.

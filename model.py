@@ -97,13 +97,13 @@ class Model:
 
 
     def train(self):
-        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=2)
+        es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
         mc = ModelCheckpoint("models/best_model_destination_"+ str(self.network_length) +  ".h5", monitor='val_accuracy', 
                             mode='max', verbose=1, save_best_only=True)
         history = self.model.fit(
                 self.X_train, 
                 self.y_train, 
-                epochs=4, 
+                epochs=200, 
                 validation_data=(self.X_val, self.y_val),
                 callbacks=[es, mc]
                 )
