@@ -2,3 +2,9 @@
 jupyter
 test
 __pycache__/
+*.csv
+*.png
+*.jpg
+*.txt
+*.h5
+*.json

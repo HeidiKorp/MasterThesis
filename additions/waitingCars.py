@@ -2,52 +2,89 @@ from transformTracks import getThreshold, getCenterPoint
 from drawTrajectory import plotTrajectory
 import pandas as pd
 import itertools
+import numpy as np
 
-queenWaiting = 254
-leithWaiting = 254
-oliverWaiting = 254
-orchardWaiting = 254
+queenWaiting = 512
+leithWaiting = 1513
+oliverWaiting = 328
+orchardWaiting = 567
 
 
-def saveWaitingTracks(inFile, outFile):
-    ids = []
+def saveWaitingTracks(idFile, dataFile, outFile):
+    ids = pd.read_csv(idFile, dtype='category').to_numpy()
+    print("la")
+    data = pd.read_csv(dataFile, dtype='category')
+    print("ke")
+
+    res = pd.DataFrame()
+    print("Hey")
     counter = 0
-
-    with open(inFile) as infile:
-        for line in infile:
-            s = line.split(",")
-            # for i in range(len(s)):
-            #     print("i: ", i, " val: ", s[i])
-            # break
-            # if s[4] == "7" and (s[25] == "0.0" or s[25] == "0.0" or s[29] == "0.0" or s[30] == "0.0"):
-            #     print(s)
-            if s[5] not in ids and (s[26] == "0.0" or s[27] == "0.0" or s[30] == "0.0" or s[31] == "0.0"):
-                ids.append(s[4])
-    #             # print()
-    #             # print("Yeah ", counter)
-    #             # counter += 1
-    print("Ids: ", len(ids), " set: ", len(set(ids)))
-    ids.sort()
-    print(ids)
-    # orig = pd.read_csv(fileName, dtype='category')
-    # out = orig.loc[orig['ObjectId'].isin(ids)]
-    # out.columns = orig.columns
-    # out.to_csv(outFile)
+    for row in ids:
+        csvName = row[-1]
+        objId = row[-2]
+        print(counter)
+        val = data.loc[(data['ObjectId'] == objId) & (data['csv_name'] == csvName)]
+        # print(val.count)
+        res = res.append(val)
+        counter += 1
+    # res = data.loc[(data['ObjectId'] == ids['ObjectId']) & (data['csv_name'] == ids['csv_name'])]
+    print(res.columns)
+    res.columns = data.columns
+    res.to_csv(outFile)
 
 
-def saveWaitingPandas(inFile, outFile):
-    data = pd.read_csv(inFile, dtype='category')
-    relX = data.loc[data['RelVelocity_X'].astype(float) == 0.0].ObjectId.unique()
-    relY = data.loc[data['RelVelocity_Y'].astype(float) == 0.0].ObjectId.unique()
-    absX = data.loc[data['AbsVelocity_X'].astype(float) == 0.0].ObjectId.unique()
-    absY = data.loc[data['AbsVelocity_Y'].astype(float) == 0.0].ObjectId.unique()
+def testPandas():
+    data = {'A': [1,4,1,2, 2], 'B': [2,3,4, 4, 4]}
+    df = pd.DataFrame(data)
+    print(df)
+    print()
+    res = df.loc[(df['A'] == 1) & (df['B'] == 2)]
+    print(res)
+    # df2 = df.drop_duplicates()
+    # print(df2)
+
+
+def getNotWaitingIds(waitingFile, dataFile, outFile):
+    wait = pd.read_csv(waitingFile, dtype='category')
+    data = pd.read_csv(dataFile, dtype='category')
+
+    print("Read data files")
+    ids = data[['ObjectId', 'csv_name']]
+    ids = ids.drop_duplicates()
+    df_all = ids.merge(wait, on=['ObjectId', 'csv_name'], how='left', indicator=True)
     
-    chained = itertools.chain(relX, relY, absX, absY)
-    ids_set = set(chained)
-    ids_set = [int(x) for x in ids_set]
-    ids = list(ids_set) 
-    ids.sort()
-    print("Ids: ", len(ids), "\n", ids)
+    print("All head:\n", df_all.head())
+    res = df_all.loc[df_all['_merge'] == 'left_only']
+    print("Res head:\n", res.head())
+    res.to_csv(outFile)
+
+
+def splitIds(fileName, outName, count):
+    data = pd.read_csv(fileName, dtype='category')
+
+    queen = data.loc[data['csv_name'].str.contains("queen")]
+    leith = data.loc[data['csv_name'].str.contains("leith")]
+    oliver = data.loc[data['csv_name'].str.contains("oliver")]
+    orchard = data.loc[data['csv_name'].str.contains("orchard")]
+
+    
+    res = queen.sample(n = count)
+    res = res.append(leith.sample(n = count))
+    res = res.append(oliver.sample(n = count))
+    res = res.append(orchard.sample(n = count))
+    res.to_csv(outName)
+
+
+def saveWaitingPandasIds(inFile, outFile):
+    data = pd.read_csv(inFile, dtype='category')
+    relX = data.loc[data['RelVelocity_X'].astype(float) == 0.0]
+    relY = data.loc[data['RelVelocity_Y'].astype(float) == 0.0]
+    absX = data.loc[data['AbsVelocity_X'].astype(float) == 0.0]
+    absY = data.loc[data['AbsVelocity_Y'].astype(float) == 0.0]
+    
+    chained = relX.append([relY, absY, absX])
+    chained_unique = chained[['ObjectId', 'csv_name']].drop_duplicates()
+    chained_unique.to_csv(outFile)
 
 
 def sortDataframe(fileName):
@@ -57,54 +94,30 @@ def sortDataframe(fileName):
 
 
 def countIntersectionTracks(fileName):
-    queen = 0
-    leith = 0
-    oliver = 0
-    orchard = 0
-    roslyn = 0
 
-    leithTr = []
-    oliverTr = []
-    queenTr = []
-    orchTr = []
-    roslynTr = []
-    with open(fileName) as infile:
-        for line in infile:
-            s = line.split(",")
-            inter = s[47]
-            track = s[4]
-            if "queen" in inter and track not in queenTr: 
-                queen += 1
-                queenTr.append(track)
-            elif "leith" in inter and track not in leithTr: 
-                leith += 1
-                leithTr.append(track)
-            elif "oliver" in inter and track not in oliverTr: 
-                oliver += 1
-                oliverTr.append(track)
-            elif "orchard" in inter and track not in orchTr: 
-                orchard += 1
-                orchTr.append(track)
-            elif "roslyn" in inter and track not in roslynTr: 
-                roslyn + 1
-                roslynTr.append(track)
-    print("Queen: ", queen, "\nLeith: ", leith, 
-            "\nOliver: ", oliver, "\nOrchard: ", orchard,
-            "\nRoslyn: ", roslyn)
+    data = pd.read_csv(fileName, dtype='category')
+    queen = data.loc[data['csv_name'].str.contains("queen")]
+    leith = data.loc[data['csv_name'].str.contains("leith")]
+    oliver = data.loc[data['csv_name'].str.contains("oliver")]
+    orchard = data.loc[data['csv_name'].str.contains("orchard")]
+    roslyn = data.loc[data['csv_name'].str.contains("roslyn")]
 
+    print("Queen: ", queen.count, "\nLeith: ", leith.count, "\nOliver: ", oliver.count, "\nOrchard: ", orchard.count, "\nRoslyn: ", roslyn.count)
 
+  
 def getBeforeThreshold(fileName, outputFile):
     data = pd.read_csv(fileName)
     northThresh, southThresh, eastThresh, westThresh = getThreshold()
     print("North: ", northThresh, "\nWest: ", westThresh, "\nSouth: ", southThresh, "\nEast: ", eastThresh)
 
-    northData = data.loc[(data['origin'] == 'north') & (data['relative_y'].astype(float) > northThresh)]
-    westData = data.loc[(data['origin'] == 'west') & (data['relative_x'].astype(float) < westThresh)]
-    southData = data.loc[(data['origin'] == 'south') & (data['relative_y'].astype(float) < southThresh)]
-    eastData = data.loc[(data['origin'] == 'east') & (data['relative_x'].astype(float) > eastThresh)]
+    northData = data.loc[(data['origin'] == 'north') & (data['relative_y_trans'].astype(float) > northThresh)]
+    westData = data.loc[(data['origin'] == 'west') & (data['relative_x_trans'].astype(float) < westThresh)]
+    southData = data.loc[(data['origin'] == 'south') & (data['relative_y_trans'].astype(float) < southThresh)]
+    eastData = data.loc[(data['origin'] == 'east') & (data['relative_x_trans'].astype(float) > eastThresh)]
     
     beforeEntry = northData.append([westData, southData, eastData])
-    beforeEntry.columns = data.columns
+    print(beforeEntry.columns)
+    # beforeEntry.columns = data.columns
     beforeEntry.to_csv(outputFile)
 
 
@@ -135,8 +148,8 @@ def main():
     # outName = "1srTrackOliver05BeforeEntry.csv"
     # saveWaitingTracks(fileName, outName)
     # saveWaitingPandas(fileName, outName)
-    # countIntersectionTracks(fileName, outName)
-    getBeforeThreshold("oliver05Transform.csv", "oliver05Before.csv")
+    # countIntersectionTracks('waitingIds.csv')
+    # getBeforeThreshold("../../intersections-dataset-transformed.csv", "intersections-dataset-before-thresh.csv")
     # data = pd.read_csv(fileName, dtype='category')
     # data = pd.read_csv("../../records/records_0-5000.csv", dtype='category')
     # centX, centY = getCenterPoint()
@@ -147,8 +160,12 @@ def main():
 
     # data = pd.read_csv("../../intersections-dataset.csv", dtype='category')
     # print(len(data.ObjectId.unique()))
-
-
+    # testPandas()
+    # saveWaitingPandasIds("intersections-dataset-before-thresh.csv", 'waitingIds.csv')
+    # saveWaitingTracks('waitingIds.csv', "intersections-dataset-before-thresh.csv", 'waiting-thresh.csv')
+    # getNotWaitingIds('datasets/waitingIds.csv', "../../intersections-dataset.csv", "datasets/notWaitingIds.csv")
+    # splitIds("datasets/waitingIds.csv", "datasets/waitingSplitIds.csv", 328)
+    saveWaitingTracks("datasets/notWaitingSplitIds.csv", 'datasets/intersections-dataset-before-thresh.csv', 'datasets/not-waiting-thresh-split.csv')
 
 if __name__ == "__main__":
     main()
