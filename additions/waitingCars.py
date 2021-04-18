@@ -24,8 +24,10 @@ def saveWaitingTracks(idFile, dataFile, outFile):
         objId = row[-2]
         print(counter)
         val = data.loc[(data['ObjectId'] == objId) & (data['csv_name'] == csvName)]
-        # print(val.count)
+        print("Data: ", len(val.index))
         res = res.append(val)
+        print("Res: ", len(res.index))
+        print()
         counter += 1
     # res = data.loc[(data['ObjectId'] == ids['ObjectId']) & (data['csv_name'] == ids['csv_name'])]
     print(res.columns)
@@ -44,14 +46,14 @@ def testPandas():
     # print(df2)
 
 
-def getNotWaitingIds(waitingFile, dataFile, outFile):
+def getDataWithoutWaiting(waitingFile, dataFile, outFile):
     wait = pd.read_csv(waitingFile, dtype='category')
     data = pd.read_csv(dataFile, dtype='category')
 
     print("Read data files")
-    ids = data[['ObjectId', 'csv_name']]
-    ids = ids.drop_duplicates()
-    df_all = ids.merge(wait, on=['ObjectId', 'csv_name'], how='left', indicator=True)
+    # ids = data[['ObjectId', 'csv_name']]
+    # ids = ids.drop_duplicates()
+    df_all = data.merge(wait, on=['ObjectId', 'csv_name'], how='left', indicator=True)
     
     print("All head:\n", df_all.head())
     res = df_all.loc[df_all['_merge'] == 'left_only']
@@ -59,13 +61,31 @@ def getNotWaitingIds(waitingFile, dataFile, outFile):
     res.to_csv(outFile)
 
 
+def getNotWaitingSplit(idFile, dataFile, outFile):
+    ids = pd.read_csv(idFile, dtype='category')
+    data = pd.read_csv(dataFile, dtype='cateogry')
+
+
+
+
 def splitIds(fileName, outName, count):
     data = pd.read_csv(fileName, dtype='category')
 
     queen = data.loc[data['csv_name'].str.contains("queen")]
+    queen = queen[['ObjectId', 'csv_name']]
+    queen = queen.drop_duplicates()
+
     leith = data.loc[data['csv_name'].str.contains("leith")]
+    leith = leith[['ObjectId', 'csv_name']]
+    leith = leith.drop_duplicates()
+
     oliver = data.loc[data['csv_name'].str.contains("oliver")]
+    oliver = oliver[['ObjectId', 'csv_name']]
+    oliver = oliver.drop_duplicates()
+
     orchard = data.loc[data['csv_name'].str.contains("orchard")]
+    orchard = orchard[['ObjectId', 'csv_name']]
+    orchard = orchard.drop_duplicates()
 
     
     res = queen.sample(n = count)
@@ -163,9 +183,9 @@ def main():
     # testPandas()
     # saveWaitingPandasIds("intersections-dataset-before-thresh.csv", 'waitingIds.csv')
     # saveWaitingTracks('waitingIds.csv', "intersections-dataset-before-thresh.csv", 'waiting-thresh.csv')
-    # getNotWaitingIds('datasets/waitingIds.csv', "../../intersections-dataset.csv", "datasets/notWaitingIds.csv")
-    # splitIds("datasets/waitingIds.csv", "datasets/waitingSplitIds.csv", 328)
-    saveWaitingTracks("datasets/notWaitingSplitIds.csv", 'datasets/intersections-dataset-before-thresh.csv', 'datasets/not-waiting-thresh-split.csv')
+    # getDataWithoutWaiting('datasets/waitingIds.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/dataset-without-waiting.csv")
+    # splitIds("datasets/dataset-without-waiting.csv", "datasets/not-waiting-split-ids.csv", 328)
+    saveWaitingTracks("datasets/not-waiting-split-ids.csv", 'datasets/intersections-dataset-before-thresh.csv', 'datasets/not-waiting-thresh-split.csv')
 
 if __name__ == "__main__":
     main()
