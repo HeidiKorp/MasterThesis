@@ -2,16 +2,17 @@ import pandas as pd
 import numpy as np
 from ast import literal_eval
 
-
+# Here the timestamp is wrong!!!
 def getOtherVehicles(timestamp, objId, csvName, data):
     # print("Got here!")
-    timestamp = float(timestamp)
+    new_timestamp = float(timestamp)
     data['Timestamp'] = data['Timestamp'].astype(float)
-    data['time_diff'] = abs(data['Timestamp'] - timestamp)
+    data['time_diff'] = abs(data['Timestamp'] - new_timestamp)
 
 
-    sub = data.loc[(data['time_diff'] < 1) & ~((data['ObjectId'] == objId) & (data['csv_name'] == csvName))]
-    print("Where time diff < 1: ", len(sub.index))
+    sub = data.loc[(data['time_diff'] < 1) & ~((data['ObjectId'] == objId) & (data['csv_name'] == csvName)) \
+            & ~((data['AbsVelocity_X'] == '0.0') | (data['AbsVelocity_Y'] == '0.0'))]
+    # print("Where time diff < 1: ", len(sub.index))
     sub = sub.sort_values(by='time_diff', ascending=True)
     sub = sub.drop_duplicates(subset=['ObjectId', 'csv_name'], keep='first')
 
@@ -24,6 +25,8 @@ def getOtherVehicles(timestamp, objId, csvName, data):
     peerObjectId = sub['ObjectId'].to_list()
     peerCsvName = sub['csv_name'].to_list()
     peerTimestamp = sub['time_diff'].to_list()
+    # timestamp = str(timestamp)
+    print("Timestamp: ", timestamp, " peerTime: ", peerTimestamp)
 
     return pd.Series([
         objId,
@@ -41,30 +44,34 @@ def getOtherVehicles(timestamp, objId, csvName, data):
     ])
 
 
+def removePeersWhoAreWaitingToo(data):
+    return data.loc[~((data['AbsVelocity_X'] == '0.0') | (data['AbsVelocity_Y'] == '0.0'))]
+
+
 def updateData(inFile, dataFile, outFile):
     filtered = pd.read_csv(inFile, dtype='category')
     data = pd.read_csv(dataFile, dtype='category')
-    data['Timestamp'] = data['Timestamp'].astype(float)
+    # data['Timestamp'] = data['Timestamp'].astype(float)
 
-    # Get only rows where velocity is 0
-    relX = filtered.loc[filtered['RelVelocity_X'].astype(float) == 0.0]
-    relY = filtered.loc[filtered['RelVelocity_Y'].astype(float) == 0.0]
-    absX = filtered.loc[filtered['AbsVelocity_X'].astype(float) == 0.0]
-    absY = filtered.loc[filtered['AbsVelocity_Y'].astype(float) == 0.0]
+    # # Get only rows where velocity is 0
+    # relX = filtered.loc[filtered['RelVelocity_X'].astype(float) == 0.0]
+    # relY = filtered.loc[filtered['RelVelocity_Y'].astype(float) == 0.0]
+    # absX = filtered.loc[filtered['AbsVelocity_X'].astype(float) == 0.0]
+    # absY = filtered.loc[filtered['AbsVelocity_Y'].astype(float) == 0.0]
     
-    chained = relX.append([relY, absY, absX])
-    chained_unique = chained.drop_duplicates()
+    # chained = relX.append([relY, absY, absX])
+    # chained_unique = chained.drop_duplicates()
 
     print("Starting filtering!")
-    print("Velocity 0 length: ", len(chained_unique.index))
+    # print("Velocity 0 length: ", len(chained_unique.index))
     lambdafunc = lambda row : getOtherVehicles(row['Timestamp'], row['ObjectId'], row['csv_name'], data)
 
     # chained_unique[['Peer_X', 'Peer_Y', 'PeerRelVel_X', 'PeerRelVel_Y', 'PeerAbsVel_X', 'PeerAbsVel_Y', 'PeerObjectId', 'PeerCsvName']] =\
     res = pd.DataFrame()
     res = \
-         chained_unique.apply(lambdafunc, axis=1)
+         filtered.apply(lambdafunc, axis=1)
     print("Done here!")
-    print(res.head())
+    # print(res.head())
     res.to_csv(outFile)
 
 
@@ -74,12 +81,6 @@ def test():
     print()
     df = df.explode('B')
     print(df)
-
-
-def updatePeers(inFile, outFile):
-    data = pd.read_csv(inFile, dtype='category')
-    newData = data.apply(lambda row : removeDuplicatePeers(row), axis=1)
-    newData.to_csv(outFile)
 
 
 def setColumns(inFile, columns):
@@ -107,12 +108,34 @@ def printTimestampDifference(inFile):
     print("\nHalf average is: ", aver / 2)
 
 
+def getNotEmptyTracks(inFile, outFile):
+    data = pd.read_csv(inFile, dtype='category')
+    sub = data.loc[~(data.Peer_X == '[]')]
+    # ids = sub[['ObjectId', 'csv_name']].drop_duplicates()
+    # res = data.merge(ids, on=['ObjectId', 'csv_name'], how='inner')
+    sub.to_csv(outFile)
+
+
+def concatDatasets(dataFile, peersFile, outFile):
+    data = pd.read_csv(dataFile, dtype='category')
+    peers = pd.read_csv(peersFile, dtype='category')
+    res = data.merge(peers, on=['ObjectId', 'csv_name', 'Timestamp'], how='inner')
+    res.to_csv(outFile)
+
+
 def main():
-    # updateData('datasets/waiting-thresh-split.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/peers102.csv")
+    updateData('datasets/waiting-before-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/waiting-thresh-peers.csv")
+    print("Done waiting")
+    updateData('datasets/slowing-before-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/slowing-thresh-peers.csv")
+    print("Done slowing")
+    updateData('datasets/speeding-before-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/speeding-thresh-peers.csv")   
+    print("Done speeding")
     # printTimestampDifference('datasets/waiting-thresh-split.csv')
-    setColumns("datasets/peers102.csv", ['id', 'ObjectId', 'csv_name', 'Timestamp', 'Peer_X', 'Peer_Y', 'PeerRelVel_X', 'PeerRelVel_Y', 'PeerAbsVel_X', 'PeerAbsVel_Y', 'PeerObjectId', 'PeerCsvName', 'PeerTimeDiff'])
+    # setColumns("datasets/not-waiting-thresh-peers.csv", ['id', 'ObjectId', 'csv_name', 'Timestamp', 'Peer_X', 'Peer_Y', 'PeerRelVel_X', 'PeerRelVel_Y', 'PeerAbsVel_X', 'PeerAbsVel_Y', 'PeerObjectId', 'PeerCsvName', 'PeerTimeDiff'])
     # updatePeers("datasets/peers3.csv", 'datasets/peers4.csv')
     # test()
+    # getNotEmptyTracks("datasets/not-waiting-rich.csv", "datasets/not-waiting-rich-not-empty.csv")
+    # concatDatasets("datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-thresh-peers.csv", "datasets/not-waiting-rich.csv")
 
 if __name__ == "__main__":
     main()

@@ -11,27 +11,11 @@ orchardWaiting = 567
 
 
 def saveWaitingTracks(idFile, dataFile, outFile):
-    ids = pd.read_csv(idFile, dtype='category').to_numpy()
-    print("la")
+    ids = pd.read_csv(idFile, dtype='category')
     data = pd.read_csv(dataFile, dtype='category')
-    print("ke")
 
-    res = pd.DataFrame()
-    print("Hey")
-    counter = 0
-    for row in ids:
-        csvName = row[-1]
-        objId = row[-2]
-        print(counter)
-        val = data.loc[(data['ObjectId'] == objId) & (data['csv_name'] == csvName)]
-        print("Data: ", len(val.index))
-        res = res.append(val)
-        print("Res: ", len(res.index))
-        print()
-        counter += 1
-    # res = data.loc[(data['ObjectId'] == ids['ObjectId']) & (data['csv_name'] == ids['csv_name'])]
-    print(res.columns)
-    res.columns = data.columns
+    res = data.merge(ids, on=['ObjectId', 'csv_name'], how='inner')
+    print(res['Timestamp'])
     res.to_csv(outFile)
 
 
@@ -46,26 +30,83 @@ def testPandas():
     # print(df2)
 
 
+def getAverageVelocity(dataFile):
+    # Abs Res: 6.233401909964011 1.3921506215067325
+    # Rel res: 
+    data = pd.read_csv(dataFile, dtype='category')
+    sub_X = abs(data['AbsVelocity_X'].astype(float))
+    sub_Y = abs(data['AbsVelocity_Y'].astype(float))
+    sumXY = sub_X + sub_Y
+    return sumXY.mean()
+
+
+def getNotWaitIds(waitIds, dataFile, outFile):
+    wait = pd.read_csv(waitIds, dtype='category')
+    data = pd.read_csv(dataFile, dtype='category')
+
+    print("Read data files")
+    wait_cols = wait[['ObjectId', 'csv_name']]
+    wait_cols = wait_cols.values.tolist()
+
+    all_cols = data[['ObjectId', 'csv_name']]
+    all_cols = all_cols.values.tolist()
+
+    not_wait_ids = []
+    for i in all_cols:
+        if i not in wait_cols:
+            not_wait_ids.append(i)
+
+    res = pd.DataFrame(not_wait_ids, columns=['ObjectId', 'csv_name'])
+    res = res.drop_duplicates()
+    res.to_csv(outFile)
+
+    
+    # all_ids = data[['ObjectId', 'Timestamp', 'csv_name']]
+    # wait_ids = wait[['ObjectId', 'Timestamp', 'csv_name']]
+    # not_wait_ids = all_ids.merge(wait_ids
+    # , how = 'outer' ,indicator=True).loc[lambda x : x['_merge']=='left_only']
+    # print(not_wait_ids.head())
+    # print(len(not_wait_ids))
+    # not_wait_ids.to_csv(outFile)
+
+
+def getDataWithoutWaitingRows(dataFile, ids, outFile):
+    ids = pd.read_csv(ids, dtype='category')
+    data = pd.read_csv(dataFile, dtype='category')
+    data_cols = data[['ObjectId', 'Timestamp', 'csv_name']]
+    data_cols = data_cols.values.tolist()
+    print("Cols: ", data_cols[0])
+
+    rows = []
+    counter = 0
+    for row in ids.values.tolist():
+        row_val = row[1:4]
+        if row_val in data_cols:
+            print(counter, " ", row_val)
+            rows.append(row)
+            counter += 1
+    res = pd.DataFrame(rows)
+    res.to_csv(outFile)
+
+
+
+
 def getDataWithoutWaiting(waitingFile, dataFile, outFile):
     wait = pd.read_csv(waitingFile, dtype='category')
     data = pd.read_csv(dataFile, dtype='category')
 
     print("Read data files")
-    # ids = data[['ObjectId', 'csv_name']]
-    # ids = ids.drop_duplicates()
-    df_all = data.merge(wait, on=['ObjectId', 'csv_name'], how='left', indicator=True)
+
+    res = data.merge(wait, on=['ObjectId', 'csv_name', 'Timestamp'], left_index=True, right_index=True,
+             how='left', suffixes=('', '_DROP')).filter(regex='^(?!.*_DROP)').drop_duplicates()
     
-    print("All head:\n", df_all.head())
-    res = df_all.loc[df_all['_merge'] == 'left_only']
+    # print("All head:\n", df_all.head())
+    # res = df_all[df_all['_merge'] == 'left_only']
     print("Res head:\n", res.head())
+    print("Len by subtrackt: ", len(data) - len(wait))
+    print("Len of result: ", len(res))
+    # # print(res['Timestamp'])
     res.to_csv(outFile)
-
-
-def getNotWaitingSplit(idFile, dataFile, outFile):
-    ids = pd.read_csv(idFile, dtype='category')
-    data = pd.read_csv(dataFile, dtype='cateogry')
-
-
 
 
 def splitIds(fileName, outName, count):
@@ -107,6 +148,68 @@ def saveWaitingPandasIds(inFile, outFile):
     chained_unique.to_csv(outFile)
 
 
+def saveWaitingSlowingSpeedingRecords(inFile, waitingFile, slowingFile, speedingFile):
+    data = pd.read_csv(inFile, dtype='category')
+    relX = data.loc[data['RelVelocity_X'].astype(float) == 0.0]
+    relY = data.loc[data['RelVelocity_Y'].astype(float) == 0.0]
+    absX = data.loc[data['AbsVelocity_X'].astype(float) == 0.0]
+    absY = data.loc[data['AbsVelocity_Y'].astype(float) == 0.0]
+
+    chained = relX.append([relY, absY, absX])
+    chained = chained.drop_duplicates()
+
+    data = data[data.columns.drop(list(data.filter(regex='Unnamed')))]
+    chained = chained[chained.columns.drop(list(chained.filter(regex='Unnamed')))]
+
+    # Remove all records where velocity is 0
+    not_waiting_data = pd.concat([data, chained]).drop_duplicates(keep=False)
+    # not_waiting_data.head(100).to_csv("datasets/not_waiting_test_100.csv")
+    # Abs res: 6.233401909964011 1.3921506215067325
+    # Rel res: 6.238447276481729 1.3959423754187699
+    # Sum Abs:  6.7120827299587855
+    # Sum Rel: 6.720436096085768
+
+    # Add velocities to get speed
+    not_waiting_data['abs_vel_sum'] = not_waiting_data['AbsVelocity_X'].astype(float).abs() + not_waiting_data['AbsVelocity_Y'].astype(float).abs()
+    not_waiting_data['rel_vel_sum'] = not_waiting_data['RelVelocity_X'].astype(float).abs() + not_waiting_data['RelVelocity_Y'].astype(float).abs()
+
+    abs_sum = not_waiting_data['abs_vel_sum'].sum()
+    rel_sum = not_waiting_data['rel_vel_sum'].sum()
+    lening =  len(not_waiting_data)
+    abs_avg = abs_sum / lening
+    rel_avg = rel_sum / lening
+
+    print("Abs avg: ", abs_sum)
+    print("Lenght: ", lening)
+    print("Avg abs: ", abs_avg)
+    print("Rel abs: ", rel_avg)
+
+    # Filter out records, whose speed is lower than the average
+    # abs2 = not_waiting_data.loc[not_waiting_data['abs_vel_sum'] <= 3.35]
+    # rel2 = not_waiting_data.loc[not_waiting_data['rel_vel_sum'] <= 3.35]
+
+    # abs2 = not_waiting_data.loc[not_waiting_data['abs_vel_sum'] <= abs_avg]
+    # rel2 = not_waiting_data.loc[not_waiting_data['rel_vel_sum'] <= rel_avg]
+
+
+    # relX2 = not_waiting_data.loc[data['RelVelocity_X'].astype(float) == 3.1]
+    # relY2 = not_waiting_data.loc[data['RelVelocity_Y'].astype(float) == 0.7]
+    # absX2 = not_waiting_data.loc[data['AbsVelocity_X'].astype(float) <= 3.1]
+    # absY2 = not_waiting_data.loc[data['AbsVelocity_Y'].astype(float) <= 0.7]
+
+    # chained2 = rel2.append(abs2)
+    # chained2 = chained2.drop_duplicates()
+
+    # chained2 = chained2[chained2.columns.drop(list(chained2.filter(regex='Unnamed')))]
+
+    # not_waiting_data = pd.concat([not_waiting_data, chained2]).drop_duplicates(keep=False)
+
+    # chained.to_csv(waitingFile)
+    # chained2.to_csv(slowingFile)
+    # not_waiting_data.to_csv(speedingFile)
+
+
+
 def sortDataframe(fileName):
     data = pd.read_csv(fileName, dtype='category')
     data = data.sort_values(['ObjectId', 'Timestamp'])
@@ -114,7 +217,6 @@ def sortDataframe(fileName):
 
 
 def countIntersectionTracks(fileName):
-
     data = pd.read_csv(fileName, dtype='category')
     queen = data.loc[data['csv_name'].str.contains("queen")]
     leith = data.loc[data['csv_name'].str.contains("leith")]
@@ -155,6 +257,22 @@ def getOneFile(trackFile, inFile, outFile):
     track.to_csv(outFile)
 
 
+def deleteExcessColumns(fileName, start, end, outFile):
+    data = pd.read_csv(fileName, dtype='category')
+    cols = len(data.columns)
+
+    new_data = data.iloc[:, start:cols+end]
+    new_data.to_csv(outFile)
+
+
+def checkOverlapping(file1, file2):
+    df1 = pd.read_csv(file1, dtype='category')
+    df2 = pd.read_csv(file2, dtype='category')
+
+    s1 = pd.merge(df1, df2, how='inner', on=['ObjectId', 'csv_name', 'Timestamp'])
+    print(s1)
+    print(len(s1))
+
 
 def main():
     # fileName = "waiting-dataset.csv"
@@ -181,11 +299,32 @@ def main():
     # data = pd.read_csv("../../intersections-dataset.csv", dtype='category')
     # print(len(data.ObjectId.unique()))
     # testPandas()
-    # saveWaitingPandasIds("intersections-dataset-before-thresh.csv", 'waitingIds.csv')
-    # saveWaitingTracks('waitingIds.csv', "intersections-dataset-before-thresh.csv", 'waiting-thresh.csv')
-    # getDataWithoutWaiting('datasets/waitingIds.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/dataset-without-waiting.csv")
+    # saveWaitingPandasIds("datasets/intersections-dataset-before-thresh.csv", 'datasets/waitingIds.csv')
+    # saveWaitingTracks('datasets/not-waiting-ids.csv', "datasets/intersections-dataset-before-thresh.csv", 'datasets/not-waiting-thresh.csv')
+    # getDataWithoutWaiting('datasets/waiting-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-thresh5.csv")
+    # getDataWithoutWaitingRows("datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-ids.csv", "datasets/not-waiting-thresh5.csv")
     # splitIds("datasets/dataset-without-waiting.csv", "datasets/not-waiting-split-ids.csv", 328)
-    saveWaitingTracks("datasets/not-waiting-split-ids.csv", 'datasets/intersections-dataset-before-thresh.csv', 'datasets/not-waiting-thresh-split.csv')
-
+    # saveWaitingTracks("datasets/waitingIds.csv", 'datasets/intersections-dataset-before-thresh.csv', 'datasets/waiting-thresh-02.csv')
+    # getBeforeThreshold("datasets/dataset-without-waiting.csv", "datasets/not-waiting-thresh.csv")
+    # deleteExcessColumns("datasets/waiting-thresh.csv", 4, -1, "datasets/waiting-thresh2.csv")
+    # getNotWaitIds('datasets/waiting-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-ids2.csv")
+    # sumMean = getAverageVelocity("datasets/intersections-dataset-before-thresh.csv")
+    saveWaitingSlowingSpeedingRecords("datasets/intersections-dataset-before-thresh.csv", 
+                                    "datasets/waiting-before-thresh.csv",
+                                    "datasets/slowing-before-thresh.csv",
+                                    "datasets/speeding-before-thresh.csv")
+    # testLeftJoin()
+    # print("Abs: ", sumMean)
+    # checkOverlapping("datasets/slowing-before-thresh.csv", "datasets/speeding-before-thresh.csv")
 if __name__ == "__main__":
     main()
+
+
+
+
+# Currently I have full trajectories of those vehicles, that waited at some point
+# But, to make the snapshow data, I need to have those records that have velocity 0, and those that have other vehicles at the same time at the intersection
+# Snapshot:
+# - Velocity is 0
+# There are other vehicles at the roundabout
+# The other vehicle's velocity is not 0
