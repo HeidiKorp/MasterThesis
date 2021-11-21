@@ -4,6 +4,33 @@ from sklearn.preprocessing import StandardScaler, normalize, Normalizer
 import ast
 
 
+def normalizeCol(col_data, sc):
+    orig_data = col_data.to_numpy()
+    
+    # Remove empty rows
+    data = [x for x in orig_data if x != '[]']
+
+    # Convert data to list of floats
+    for i in range(len(data)):
+        data[i] = ast.literal_eval(data[i])
+        for j in range(len(data[i])):
+            data[i][j] = float(data[i][j])
+            
+    df = pd.DataFrame(data)
+    scaled = sc.fit_transform(df)
+
+    # Add back empty rows
+    res = []
+    next = 0
+    for i in range(len(orig_data)):
+        if orig_data[i] == '[]':
+            res.append([])
+        else:
+            res.append(scaled[next])
+            next += 1
+    
+    return res
+
 
 def main():
     # train_data = pd.read_csv("datasets/training/training-peers-rich.csv", dtype='category')
@@ -25,15 +52,7 @@ def main():
             'PeerAbsVelX',
             ]
 
-    # print("Type: ", type(validation_data['PeerX']))
-
-    # train_Y = train_data.action
-    # test_Y = test_data.action
     val_Y = validation_data.action
-    # print("Before norm: \n", validation_data.head(2))
-
-    # train_X = train_data[cols]
-    # test_X = test_data[cols]
     
     val_main = validation_data[main_cols]
     val_peers = validation_data[peer_cols]
@@ -41,66 +60,14 @@ def main():
     # Normalize the data
     sc = StandardScaler()
     val_main = sc.fit_transform(val_main)
+    val_main = pd.DataFrame(val_main, columns=main_cols)
 
-    for col in val_peers.columns:
-        # [[] if x=='[]' else x for x in val_peers[col]]
-        a = val_peers[col]
-        # print("Start\n", a.head(2))
-        # print()
-
-        data = a.to_numpy()
-        
-       
-        data = [x for x in data if x != '[]']
-        print(type(data[0]))
-        data = ast.literal_eval(data)
-        # print("Row 1: ", data[0])
-        # for i in rows:
-        #     for j in i:
-        #         j = float(j)
-        # print("row 1: ", rows[0])
-        # df = pd.DataFrame(rows).astype(float)
-        # print(df.head(2))
-        # df = pd.DataFrame(val_peers[col], columns = peer_cols)
-        # df = val_peers[col].to_frame()
-
-        
-        # print(df.head(2))
-
-        # scaler = sc.fit(df)
-        # scaled = scaler.transform(df)
-        # arr = scaled.to_numpy()
-        # print(arr[:2])
-
-        # next = 0
-        # for i in range(len(a)):
-        #     if a[i] != '[]':
-        #         a[i] = arr[next]
-        #         next += 1
-
-
-
-        # val_peers[col] = scaled.squeeze()
-        # print(val_peers[col].head(5))
-        # print()
-
-
-        # transformer = Normalizer().fit(df)
-
-    #     a = val_peers[col]
-    #     print("A: ", a)
-    #     print("Type: ", type(a))
-
-    #     transformer = Normalizer().fit(a)
-    #     a = transformer.transform(a)
-    #     val_peers[col] = a
-    #     # print("A type: ", type(a))
-    #     print("A: ", a)
-    #     # a = normalize(a)
-    #     # val_peers[col] = sc.fit_transform(val_peers[col])
+    norm_peer = pd.DataFrame(columns=peer_cols)
+    for col in peer_cols:
+        norm_peer[col] = normalizeCol(val_peers[col], sc)
     
-    # val_X = val_main + val_peers
-    # print("After norm: \n", val_X.head(2))
+    val_X = pd.concat([val_main, norm_peer])
+    print("After norm: \n", val_X.head(2))
 
 
 if __name__ == "__main__":
