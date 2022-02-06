@@ -1,18 +1,25 @@
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, StandardScaler
 import numpy as np
 import random
 import math
+import pandas as pd
 
 def normalizeFeature(data, feature, newCol):
     le = LabelEncoder()
     data[newCol] = le.fit_transform(data[feature])
-    return dict(zip(le.classes_, le.transform(le.classes_)))
+    return data
+    # return dict(zip(le.classes_, le.transform(le.classes_)))
 
 def unNormalize(mapping, res):
     for dest, code in mapping:
         if code == res:
             return dest
 
+def normalizeData(data):
+    data = data.astype(float)
+    sc = StandardScaler()
+    res = sc.fit_transform(data)
+    return pd.DataFrame(res, columns=data.columns)
 
 def split_sequences(data, n_steps, track_id):
     X, y = list(), list()
@@ -37,8 +44,8 @@ def split_sequences(data, n_steps, track_id):
 
 
 def get_train_val_test(data, train_size, val_size, test_size):
-    # Get all unique values of column 'ObjectId'
-    unique_tracks = data['ObjectId'].unique()
+    # Get all unique values of column 'uniqueId'
+    unique_tracks = data['uniqueId'].unique()
     nr_tracks = len(unique_tracks)
 
     # Get train, val, test size in tracks
@@ -47,14 +54,14 @@ def get_train_val_test(data, train_size, val_size, test_size):
     test_z = round(nr_tracks * test_size) + val_z
     # Shuffle tracks
     random.shuffle(unique_tracks)
-    # Get row indexes where ObjectId equals the n first track numbers
+    # Get row indexes where uniqueId equals the n first track numbers
     # n equals the number of train tracks
-    train_idx = data.index[data['ObjectId'].isin(unique_tracks[:train_z])].tolist()
+    train_idx = data.index[data['uniqueId'].isin(unique_tracks[:train_z])].tolist()
     train = data.iloc[train_idx]
 
-    val_idx = data.index[data['ObjectId'].isin(unique_tracks[train_z:val_z])].tolist()
+    val_idx = data.index[data['uniqueId'].isin(unique_tracks[train_z:val_z])].tolist()
     val = data.iloc[val_idx]
 
-    test_idx = data.index[data['ObjectId'].isin(unique_tracks[val_z:])].tolist()
+    test_idx = data.index[data['uniqueId'].isin(unique_tracks[val_z:])].tolist()
     test = data.iloc[test_idx]
     return train, val, test

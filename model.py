@@ -5,7 +5,7 @@ import tensorflow as tf
 import keras
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, LSTM, RNN, StackedRNNCells, Input
-from keras.optimizers import Adam
+from tensorflow.keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from math import floor
 import matplotlib.pyplot as plt
@@ -16,7 +16,7 @@ from helper import get_train_val_test, split_sequences
 # https://machinelearningmastery.com/how-to-develop-lstm-models-for-time-series-forecasting/
 # https://www.w3schools.com/python/python_classes.asp
 # https://keras.io/api/models/model/
-
+# This model predicts the exit of the vehicle
 class Model:
 
     def __init__(self, 
@@ -41,7 +41,7 @@ class Model:
         self.train_data, self.val_data, self.test_data = \
             get_train_val_test(data, train_size, validation_size, test_size)
         # # Reshape the data based on network length (5, 10, 25)
-        self.X_train, self.y_train = self.reshape_input(self.train_data, network_length,)
+        self.X_train, self.y_train = self.reshape_input(self.train_data, network_length)
         self.X_val, self.y_val = self.reshape_input(self.val_data, network_length)
         self.X_test, self.y_test = self.reshape_input(self.test_data, network_length)
 
@@ -59,7 +59,8 @@ class Model:
         model.add(LSTM(512, activation='relu', return_sequences=True, input_shape=(self.network_length, n_features)))
         model.add(LSTM(512, activation='relu', input_shape=(self.network_length, n_features)))
         model.add(Dropout(0.5))
-        model.add(Dense(1, activation='softmax'))  # 3 is the number of classes
+        model.add(Dense(3, activation='softmax'))  # 3 is the number of classes
+        # Why is there 1, when it should be 3 or what???
 
         # compile model using mse as a measure of model performance
         opt = Adam(learning_rate=self.lr)
@@ -81,7 +82,7 @@ class Model:
         # Wrap the Peephole cells with RNN and set return_sequences=True
         rnn = tf.keras.layers.RNN(cells, return_sequences=True)(dense)
         dropout = Dropout(0.5)(rnn)
-        outputs = tf.keras.layers.Dense(1, activation='softmax')(dropout)
+        outputs = tf.keras.layers.Dense(3, activation='softmax')(dropout)
         model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
         # compile model using mse as a measure of model performance
@@ -120,15 +121,30 @@ class Model:
         # on new data using 'predict'
         print("Generate predictions for %s samples" % (n_samples))
         predictions = model.predict(self.X_test[:n_samples])
-        actual = self.y_test[:n_samples]
-        print("Predicted: ", predictions)
-        print("Actual: ", actual)
+        # actual = self.y_test[:n_samples]
+        # print("Predicted: ", predictions)
+        # print("Actual: ", actual)
+            # Converting predictions to label
+        pred = list()
+        for i in range(len(predictions)):
+            pred.append(np.argmax(y_pred[i]))
+
+        # Converting one hot encoded test label to label
+        test = list()
+        for i in range(len(self.y_test[:n_samples])):
+            test.append(np.argmax(self.y_test[:n_samples][i]))
+        
+        print("Result: ", test[4895:4900])
+        print("Y_test: ", pred[4895:4900])
+        # Get accuracy
+        a = accuracy_score(test, pred)
+        print("Accuracy is: ", a * 100)
 
 
     def reshape_input(self, X, k):
         # Get the index of OdjectId
         col_names = list(X.columns)
-        idx_obj_id = col_names.index('ObjectId')
+        idx_obj_id = col_names.index('uniqueId')
         # Convert pandas dataFrame to numpy array
         X = X.to_numpy()
         return split_sequences(X, k, idx_obj_id)

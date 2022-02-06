@@ -50,28 +50,25 @@ def transformRow(relX, relY, origin, destination):
     relX = float(relX)
     relY = float(relY)
 
+    # -2.5, 8
     centX, centY = getCenterPoint()
-
     newX = 0
     newY = 0
-    diffY = abs(abs(centY) - abs(relY))
-    diffX = abs(abs(centX) - abs(relX))
-    if centY < 0 and relY > 0 or centY > 0 and relY < 0:
-        diffY = abs(abs(centY) + abs(relY))
-    if centX < 0 and relX > 0 or centX > 0 and relX < 0:
-        diffX = abs(abs(centX) + abs(relX))
 
+    diffY = abs(centY - relY)
+    diffX = abs(centX - relX)
 
-    if origin != "south":
-        newX = diffX + centX
-        newY = diffY + centY
-        if relY > centX:
-            newX = -diffX + centX
-        if relY > centY:
-            newY = -diffY + centY
-        return newX, newY
-    else:
-        return relX, relY
+    newX, newY = relX, relY
+    if origin == 'north':
+        newY = (centY - diffY) if relY > centY else (centY + diffY)
+        newX = (centX - diffX) if relX > centX else (centX + diffX)
+    if origin == 'SE':
+        newX = (centX - diffY) if relY > centY else (centX + diffY)
+        newY = (centY - diffX) if relX < centX else (centY + diffX)
+    if origin == 'NW':
+        newX = (centX - diffY) if relY < centY else (centX + diffY)
+        newY = (centY - diffX) if relX > centX else (centY + diffX)
+    return newX, newY
 
 
 def getCenterPoint():
@@ -84,6 +81,74 @@ def getThreshold():
     west = -7
     east = 3
     return north, south, east, west
+
+# Function for calculating the rounabout threshold
+def calculateThresholds(fileName):
+    data = pd.read_csv(fileName, dtype='category')
+
+    north = data.loc[data.origin == "north"]
+    south = data.loc[data.origin == "south"]
+    east = data.loc[data.origin == "SE"]
+    west = data.loc[data.origin == "NW"]
+
+    # Get 3 first points for each direction
+    n3 = north.iloc[:3]
+    s3 = south.iloc[:3]
+    e3 = east.iloc[:3]
+    w3 = west.iloc[:3]
+
+    # Get average for each direction
+    north_avg_x = n3.relative_x_trans.astype(float).mean()
+    south_avg_x = s3.relative_x_trans.astype(float).mean()
+    east_avg_y = e3.relative_y_trans.astype(float).mean()
+    west_avg_y = w3.relative_y_trans.astype(float).mean()
+
+    x_east = east.relative_x_trans.astype(float)
+    y_east = east.relative_y_trans.astype(float)
+    x_west = west.relative_x_trans.astype(float)
+    y_west = west.relative_y_trans.astype(float)
+
+    plt.scatter(x_east, y_east, color='red', s=2)
+    # plt.scatter(x_west, y_west, color='blue')
+    plt.show()
+
+    # print("North: ")
+    # getThresh(north.iloc[3:], 'x', north_avg_x)
+    # print("South: ")
+    # getThresh(south.iloc[3:], 'x', south_avg_x)
+    # print("East: ")
+    # d = east.loc[east.uniqueId == '76730']
+    # a = d.relative_y_trans.astype(float)[:3].mean()
+    # getThresh(d.iloc[3:], 'y', a)
+    # print("West: ")
+    # getThresh(west.iloc[3:], 'y', east_avg_y)
+
+    # Accorfing to this:
+    # North: 18
+    # South: -6
+    # 
+
+
+def getThresh(data, axis, avg):
+    count = 0
+    if axis == 'x':
+        for i, j in zip(data.relative_x_trans.astype(float), data.relative_y_trans.astype(float)):
+            diff = abs(avg - i)
+            if count < 200:
+                print("X diff for north: ", diff, " ", j) # From this result I assume that when the diff is larger than 1, it has passed the threshold
+            count += 1
+            #  if diff > 1:
+            #     print("y value is: ", j)
+            #     return j
+    else:
+        for i, j in zip(data.relative_y_trans.astype(float), data.relative_x_trans.astype(float)):
+            diff = abs(avg - i)
+            if count < 200: 
+                print("Diff: ", diff, " ", j) # From this result I assume that when the diff is larger than 1, it has passed the threshold
+            count += 1
+            # if diff > 1:
+            #     print("x value is: ", j)
+            #     return j
 
 
 def transformData(fileName, outFile):
@@ -104,6 +169,8 @@ def transformData(fileName, outFile):
 
 def transformDataLines(fileName, outFile):
     data = pd.read_csv(fileName, dtype='category')
+    data = data.loc[data.origin == 'NW']
+
     data[['relative_x_trans', 'relative_y_trans']] = \
         data.apply(lambda row : transformRow(row['relative_x'], \
             row['relative_y'], row['origin'], row['destination']), \
@@ -175,7 +242,7 @@ def main():
     # urban-stationary-queen-hanks          -33.9036, 151.127       records_1595000-1600000.csv
     # urban-stationary-roslyn-crieff        -33.9005, 151.114       records_1870000-1875000.csv
     # urban-stationary-orchard-mitchell     -33.7654, 151.274       records_2955000-2960000.csv
-    print()
+    # print()
 
     # transformData("oliver05.csv", "oliver", "oliver05Transform.csv")
     # plotData("oliver05Before.csv", "../plots/oliver05Before.png")
@@ -183,6 +250,10 @@ def main():
     # getFilesTrans("../../records/")
     # readFilesIntoOne("../../records/transformed/", "../../records/transformed/intersections-dataset-transformed.csv")
     # transformDataLines("../../intersections-dataset.csv", "../../intersections-dataset-transformed.csv")
+    # calculateThresholds("datasets/intersections-dataset-transformed.csv")
+    transformDataLines("../../records/records_1840000-1845000.csv", "datasets/testing/trans-NW.csv")
+    plotData("datasets/testing/trans-NW.csv", '')
+    # plotData("../../records/records_1840000-1845000.csv", "")
 
 if __name__ == "__main__":
     main()

@@ -121,12 +121,12 @@ def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
 
     y_pred = model.predict(X_test)
 
-    #Converting predictions to label
+    # Converting predictions to label
     pred = list()
     for i in range(len(y_pred)):
         pred.append(np.argmax(y_pred[i]))
 
-    #Converting one hot encoded test label to label
+    # Converting one hot encoded test label to label
     test = list()
     for i in range(len(Y_test)):
         test.append(np.argmax(Y_test[i]))
