@@ -3,83 +3,65 @@ import matplotlib.pyplot as plt
 from drawTrajectory import plotTrajectory
 from os import listdir
 from os.path import isfile, join
+import math
+import numpy as np
 
 
-def transform(data, origin, dest):
-    # Origin: north, destination: east
-    # Y coordinate is the opposite of the center point (abs dist -> center point plus abs)
-    # X coordinate is opposite of abs dist center point plus abs
-    newData = data.copy()
-    newData['relative_x'] = newData['relative_x'].astype(float)
-    newData['relative_y'] = newData['relative_y'].astype(float)
+def transform(origin, point, angle):
+    """
+    Rotate a point clockwise by a given angle around a given origin.
 
-    centX, centY = getCenterPoint()
-    relY = []
-    relX = []
-    for index, row in newData.iterrows():
-        newX = 0
-        newY = 0
-        diffY = abs(abs(centY) - abs(row['relative_y']))
-        diffX = abs(abs(centX) - abs(row['relative_x']))
-        if centY < 0 and row['relative_y'] > 0 or centY > 0 and row['relative_y'] < 0:
-            diffY = abs(abs(centY) + abs(row['relative_y']))
-        if centX < 0 and row['relative_x'] > 0 or centX > 0 and row['relative_x'] < 0:
-            diffX = abs(abs(centX) + abs(row['relative_x']))
-    
+    The angle should be given in radians.
+    """
+    ox, oy = origin
+    px, py = point
 
-        if origin != "south":
-            newX = diffX + centX
-            newY = diffY + centY
-            if row['relative_x'] > centX:
-                newX = -diffX + centX
-            if row['relative_y'] > centY:
-                newY = -diffY + centY
-        
-        relY.append(newY)
-        relX.append(newX)
+    qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
+    qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
+    return qx, qy
 
 
-    if origin != "south":
-        newData['relative_y'] = relY
-        newData['relative_x'] = relX
+def rotate(x, y, rad):
+    res_x = math.cos(rad) * x - math.sin(rad) * y
+    res_y = math.sin(rad) * x + math.cos(rad) * y
+    return res_x, res_y
 
-    return newData
 
-
-def transformRow(relX, relY, origin, destination):
+def transformRow(relX, relY, origin, destination, csv_name):
     relX = float(relX)
     relY = float(relY)
 
-    # -2.5, 8
-    centX, centY = getCenterPoint()
-    newX = 0
-    newY = 0
-
-    diffY = abs(centY - relY)
-    diffX = abs(centX - relX)
-
-    newX, newY = relX, relY
+    center = getCenterPoint()
+    orig_point = relX, relY
+    # Transform all the tracks so that north is 180 from origin etc
     if origin == 'north':
-        newY = (centY - diffY) if relY > centY else (centY + diffY)
-        newX = (centX - diffX) if relX > centX else (centX + diffX)
-    if origin == 'SE':
-        newX = (centX - diffY) if relY > centY else (centX + diffY)
-        newY = (centY - diffX) if relX < centX else (centY + diffX)
-    if origin == 'NW':
-        newX = (centX - diffY) if relY < centY else (centX + diffY)
-        newY = (centY - diffX) if relX > centX else (centY + diffX)
-    return newX, newY
+        relX, relY = transform(center, orig_point, math.radians(180))
+    elif origin == 'south':
+        relX, relY = transform(center, orig_point, math.radians(0))
+    elif origin == 'east':
+        relX, relY = transform(center, orig_point, math.radians(90))
+    elif origin == 'west':
+        relX, relY = transform(center, orig_point, math.radians(-90))
 
+    if 'leith' in csv_name:
+        return rotate(relX, relY, math.radians(-8))
+    elif 'queen' in csv_name:
+        return rotate(relX, relY, math.radians(-4))
+    elif 'oliver' in csv_name:
+        return rotate(relX, relY, math.radians(-13))
+    elif 'orchard' in csv_name:
+        return rotate(relX, relY, math.radians(-13))
 
+# ROTATE THE THRESHOLDS!!!!!
 def getCenterPoint():
-    return -2.5, 8
+    return -2.5, 10
 
 
 def getThreshold():
-    north = 20
-    south = -3
+    north = 17
+    south = 5
     west = -7
-    east = 3
+    east = 6
     return north, south, east, west
 
 # Function for calculating the rounabout threshold
@@ -169,11 +151,10 @@ def transformData(fileName, outFile):
 
 def transformDataLines(fileName, outFile):
     data = pd.read_csv(fileName, dtype='category')
-    data = data.loc[data.origin == 'NW']
 
     data[['relative_x_trans', 'relative_y_trans']] = \
         data.apply(lambda row : transformRow(row['relative_x'], \
-            row['relative_y'], row['origin'], row['destination']), \
+            row['relative_y'], row['origin'], row['destination'], row['csv_name']), \
                 axis=1, result_type='expand')
     data.to_csv(outFile)
 
@@ -251,8 +232,19 @@ def main():
     # readFilesIntoOne("../../records/transformed/", "../../records/transformed/intersections-dataset-transformed.csv")
     # transformDataLines("../../intersections-dataset.csv", "../../intersections-dataset-transformed.csv")
     # calculateThresholds("datasets/intersections-dataset-transformed.csv")
-    transformDataLines("../../records/records_1840000-1845000.csv", "datasets/testing/trans-NW.csv")
-    plotData("datasets/testing/trans-NW.csv", '')
+
+
+    # transformDataLines("../../records/records_25000-30000.csv", "datasets/testing/leith.csv")
+    # plotData("datasets/testing/leith.csv", 'datasets/testing/leith-tracks.png')
+
+    # transformDataLines("../../records/records_1310000-1315000.csv", "datasets/testing/queen.csv")
+    # plotData("datasets/testing/queen.csv", 'datasets/testing/queen-tracks.png')
+
+    # transformDataLines("../../records/records_2585000-2590000.csv", "datasets/testing/oliver.csv")
+    # plotData("datasets/testing/oliver.csv", 'datasets/testing/oliver-tracks.png')
+
+    transformDataLines("../../records/records_3020000-3025000.csv", "datasets/testing/orchard.csv")
+    plotData("datasets/testing/orchard.csv", 'datasets/testing/orchard-tracks.png')
     # plotData("../../records/records_1840000-1845000.csv", "")
 
 if __name__ == "__main__":

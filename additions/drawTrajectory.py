@@ -4,13 +4,10 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 def plotTrajectory(data, fileName, centerX, centerY, thresholds):
-    data = data.loc[data.origin == 'NW']
-    # data = pd.read_csv("intersections-dataset.csv", dtype='category')
-
     # x = []
     # y = []
     # ids = data['ObjectId'].unique()
-    ids = data.uniqueId.unique()[:10]
+    ids = data.uniqueId.unique()
     # print(ids)
     # print("Len: ", len(ids))
     # for i in range(len(ids)):
@@ -42,7 +39,8 @@ def plotTrajectory(data, fileName, centerX, centerY, thresholds):
 
         # plt.scatter(xS, yS, s=20, color=colors[i])
         # plt.scatter(x,y, color=colors[i], s=5)
-        plt.scatter(x,y, color=colors[i], s=2)
+        plt.scatter(x,y, color=colors[i], s=1)
+        plt.axis('equal')
         # plt.plot(x,y, color=colors[i])
     plt.plot(centerX, centerY, color='red', marker="o")
 
@@ -52,8 +50,9 @@ def plotTrajectory(data, fileName, centerX, centerY, thresholds):
     plt.plot([west, west], [north, south], color='black')
     plt.plot([east, east], [north, south], color='black')
 
-    plt.show()
-    # plt.savefig(fileName, transparent=True)
+    # plt.show()
+    plt.axis('equal')
+    plt.savefig(fileName, transparent=True)
     plt.close()
 
 # # data = pd.read_csv("../../records/records_0-5000.csv", dtype='category')
