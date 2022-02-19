@@ -42,6 +42,12 @@ def transformRow(relX, relY, origin, destination, csv_name):
         relX, relY = transform(center, orig_point, math.radians(90))
     elif origin == 'west':
         relX, relY = transform(center, orig_point, math.radians(-90))
+    elif origin == 'SE':
+        relX, relY = transform(center, orig_point, math.radians(45))
+    elif origin == 'NW':
+        relX, relY = transform(center, orig_point, math.radians(-135))
+    elif origin == 'NE':
+        relX, relY = transform(center, orig_point, math.radians(135))
 
     if 'leith' in csv_name:
         return rotate(relX, relY, math.radians(-8))
@@ -51,86 +57,51 @@ def transformRow(relX, relY, origin, destination, csv_name):
         return rotate(relX, relY, math.radians(-13))
     elif 'orchard' in csv_name:
         return rotate(relX, relY, math.radians(-13))
+    elif 'roslyn' in csv_name:
+        return rotate(relX, relY, math.radians(5))
 
 # ROTATE THE THRESHOLDS!!!!!
 def getCenterPoint():
     return -2.5, 10
 
+def getFurthestThrest(data):
+    roundabouts = ['leith', 'queen', 'oliver', 'orchard', 'roslyn']
+
+
+
 
 def getThreshold():
-    north = 17
-    south = 5
-    west = -7
-    east = 6
+    # Roslyn
+
+    # Queen, Leith
+    north = 20
+    south = 0
+    west = -13
+    east = 7
+
+    # # Oliver
+    # north = 17
+    # south = 3
+    # west = -7
+    # east = 7
+
+    # # Orchard
+    # north = 17
+    # south = 0
+    # west = -7
+    # east = 10
+
+    # # Normal
+    # north = 17
+    # south = 5
+    # west = -7
+    # east = 6
     return north, south, east, west
 
-# Function for calculating the rounabout threshold
-def calculateThresholds(fileName):
-    data = pd.read_csv(fileName, dtype='category')
 
-    north = data.loc[data.origin == "north"]
-    south = data.loc[data.origin == "south"]
-    east = data.loc[data.origin == "SE"]
-    west = data.loc[data.origin == "NW"]
-
-    # Get 3 first points for each direction
-    n3 = north.iloc[:3]
-    s3 = south.iloc[:3]
-    e3 = east.iloc[:3]
-    w3 = west.iloc[:3]
-
-    # Get average for each direction
-    north_avg_x = n3.relative_x_trans.astype(float).mean()
-    south_avg_x = s3.relative_x_trans.astype(float).mean()
-    east_avg_y = e3.relative_y_trans.astype(float).mean()
-    west_avg_y = w3.relative_y_trans.astype(float).mean()
-
-    x_east = east.relative_x_trans.astype(float)
-    y_east = east.relative_y_trans.astype(float)
-    x_west = west.relative_x_trans.astype(float)
-    y_west = west.relative_y_trans.astype(float)
-
-    plt.scatter(x_east, y_east, color='red', s=2)
-    # plt.scatter(x_west, y_west, color='blue')
-    plt.show()
-
-    # print("North: ")
-    # getThresh(north.iloc[3:], 'x', north_avg_x)
-    # print("South: ")
-    # getThresh(south.iloc[3:], 'x', south_avg_x)
-    # print("East: ")
-    # d = east.loc[east.uniqueId == '76730']
-    # a = d.relative_y_trans.astype(float)[:3].mean()
-    # getThresh(d.iloc[3:], 'y', a)
-    # print("West: ")
-    # getThresh(west.iloc[3:], 'y', east_avg_y)
-
-    # Accorfing to this:
-    # North: 18
-    # South: -6
-    # 
-
-
-def getThresh(data, axis, avg):
-    count = 0
-    if axis == 'x':
-        for i, j in zip(data.relative_x_trans.astype(float), data.relative_y_trans.astype(float)):
-            diff = abs(avg - i)
-            if count < 200:
-                print("X diff for north: ", diff, " ", j) # From this result I assume that when the diff is larger than 1, it has passed the threshold
-            count += 1
-            #  if diff > 1:
-            #     print("y value is: ", j)
-            #     return j
-    else:
-        for i, j in zip(data.relative_y_trans.astype(float), data.relative_x_trans.astype(float)):
-            diff = abs(avg - i)
-            if count < 200: 
-                print("Diff: ", diff, " ", j) # From this result I assume that when the diff is larger than 1, it has passed the threshold
-            count += 1
-            # if diff > 1:
-            #     print("x value is: ", j)
-            #     return j
+# def createThresh(data):
+#     if data.csv_name.str.contains('leith'):
+#         data['roundabout_thresh'] = 
 
 
 def transformData(fileName, outFile):
@@ -156,6 +127,7 @@ def transformDataLines(fileName, outFile):
         data.apply(lambda row : transformRow(row['relative_x'], \
             row['relative_y'], row['origin'], row['destination'], row['csv_name']), \
                 axis=1, result_type='expand')
+    # data[['roundabout_thresh', 'furthest_thresh']] = createThresh(data)
     data.to_csv(outFile)
 
 
@@ -234,8 +206,8 @@ def main():
     # calculateThresholds("datasets/intersections-dataset-transformed.csv")
 
 
-    # transformDataLines("../../records/records_25000-30000.csv", "datasets/testing/leith.csv")
-    # plotData("datasets/testing/leith.csv", 'datasets/testing/leith-tracks.png')
+    transformDataLines("../../records/records_25000-30000.csv", "datasets/testing/leith.csv")
+    plotData("datasets/testing/leith.csv", 'datasets/testing/leith-tracks.png')
 
     # transformDataLines("../../records/records_1310000-1315000.csv", "datasets/testing/queen.csv")
     # plotData("datasets/testing/queen.csv", 'datasets/testing/queen-tracks.png')
@@ -243,8 +215,11 @@ def main():
     # transformDataLines("../../records/records_2585000-2590000.csv", "datasets/testing/oliver.csv")
     # plotData("datasets/testing/oliver.csv", 'datasets/testing/oliver-tracks.png')
 
-    transformDataLines("../../records/records_3020000-3025000.csv", "datasets/testing/orchard.csv")
-    plotData("datasets/testing/orchard.csv", 'datasets/testing/orchard-tracks.png')
+    # transformDataLines("../../records/records_3020000-3025000.csv", "datasets/testing/orchard.csv")
+    # plotData("datasets/testing/orchard.csv", 'datasets/testing/orchard-tracks.png')
+    
+    # transformDataLines("../../records/records_1930000-1935000.csv", "datasets/testing/roslyn.csv")
+    # plotData("datasets/testing/roslyn.csv", 'datasets/testing/roslyn-tracks.png')
     # plotData("../../records/records_1840000-1845000.csv", "")
 
 if __name__ == "__main__":

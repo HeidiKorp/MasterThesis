@@ -3,18 +3,66 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
-def plotTrajectory(data, fileName, centerX, centerY, thresholds):
-    # x = []
-    # y = []
-    # ids = data['ObjectId'].unique()
-    ids = data.uniqueId.unique()
-    # print(ids)
-    # print("Len: ", len(ids))
-    # for i in range(len(ids)):
-    #     print("i: ", i, " id: ", ids[i])
-    # print("239 is: ", ids[239])
-    # print(data.loc[data.uniqueId == ids[239]])
 
+def twoPointsThresh(csv_name):
+    # Return the two points from what to make the line for every direction
+    # Then use the line to determine if other points are above or below it
+    # North, east, south, west, north
+    # Detemine if point should be left or right from line by comparing with center point!
+    print("Csv name: ", csv_name)
+    if 'roslyn' in csv_name:
+        return np.array([
+           [-3, 20],
+           [7, 10],
+           [-3, 0],
+           [-13, 10],
+           [-3, 20]
+        ])
+    elif 'leith' in csv_name:
+        return np.array([
+            [-8, 20],
+            [9, 18],
+            [7, 0],
+            [-10, 2],
+            [-8, 20]
+        ])
+    elif 'oliver' in csv_name:
+        return np.array([
+            [-7, 21],
+            [9, 19],
+            [7, 1],
+            [-9, 3],
+            [-7, 21]
+        ])
+    elif 'orchard' in csv_name:
+        return np.array([
+            [-9, 19],
+            [12, 17],
+            [10, -2],
+            [-11, 0],
+            [-9, 19]
+        ])
+    elif 'queen' in csv_name:
+        return np.array([
+            [-13, 21],
+            [9, 20],
+            [8, 0],
+            [-14, 1],
+            [-13, 21]
+        ])
+
+
+def plotThreshLines(csv_name):
+    points = twoPointsThresh(csv_name)
+    points_x = points[:,0]
+    points_y = points[:,1]
+    plt.plot(points_x, points_y, color='black')
+
+
+def plotTrajectory(data, fileName, centerX, centerY, thresholds):
+    plotThreshLines(data.csv_name[0]) # Assume there's only one csv_name
+
+    ids = data.uniqueId.unique()
     colors = cm.rainbow(np.linspace(0, 1, len(ids)))
 
     # for i in range(len(ids)):
@@ -44,11 +92,11 @@ def plotTrajectory(data, fileName, centerX, centerY, thresholds):
         # plt.plot(x,y, color=colors[i])
     plt.plot(centerX, centerY, color='red', marker="o")
 
-    north, south, east, west = thresholds
-    plt.plot([west, east], [south, south], color='black')
-    plt.plot([west, east], [north, north], color='black')
-    plt.plot([west, west], [north, south], color='black')
-    plt.plot([east, east], [north, south], color='black')
+    # north, south, east, west = thresholds
+    # plt.plot([west, east], [south, south], color='black')
+    # plt.plot([west, east], [north, north], color='black')
+    # plt.plot([west, west], [north, south], color='black')
+    # plt.plot([east, east], [north, south], color='black')
 
     # plt.show()
     plt.axis('equal')
