@@ -164,24 +164,40 @@ def addActionCategory(dataFile, action, outFile):
 #     rowsWithPeers = data['']
 
 
+# Waiting percentage
+# Percentage is:  30.25
+# Slowing percentage
+# Percentage is:  27.11
+# Speeding percentage
+# Percentage is:  17.64
+
 def main():
-    # applyOtherVehicles('datasets/waiting-before-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/waiting-thresh-peers.csv")
+    # applyOtherVehicles('datasets/feb/waiting-before-thresh.csv', "datasets/feb/intersections-dataset-before.csv", "datasets/feb/waiting-thresh-peers.csv")
     # print("Done waiting")
-    # applyOtherVehicles('datasets/slowing-before-thresh.csv',
-    #                    "datasets/intersections-dataset-before-thresh.csv", "datasets/slowing-thresh-peers.csv")
+    # applyOtherVehicles('datasets/feb/slowing-before-thresh.csv',
+    #                    "datasets/feb/intersections-dataset-before.csv", "datasets/feb/slowing-thresh-peers.csv")
     # print("Done slowing")
-    # applyOtherVehicles('datasets/speeding-before-thresh.csv',
-    #                    "datasets/intersections-dataset-before-thresh.csv", "datasets/speeding-thresh-peers.csv")
+    # applyOtherVehicles('datasets/feb/speeding-before-thresh.csv',
+    #                    "datasets/feb/intersections-dataset-before.csv", "datasets/feb/speeding-thresh-peers.csv")
     # print("Done speeding")
     # removePeersWhoAreWaitingToo("datasets/speeding-thresh-peers.csv")
+    # removePeersWhoAreWaitingToo("datasets/waiting-thresh-peers.csv")
+    # removePeersWhoAreWaitingToo("datasets/slowing-thresh-peers.csv")
     # printTimestampDifference('datasets/waiting-thresh-split.csv')
     # setColumns("datasets/not-waiting-thresh-peers.csv", ['id', 'ObjectId', 'csv_name', 'Timestamp', 'Peer_X', 'Peer_Y', 'PeerRelVel_X', 'PeerRelVel_Y', 'PeerAbsVel_X', 'PeerAbsVel_Y', 'PeerObjectId', 'PeerCsvName', 'PeerTimeDiff'])
     # updatePeers("datasets/peers3.csv", 'datasets/peers4.csv')
     # test()
     # getNotEmptyTracks("datasets/not-waiting-rich.csv", "datasets/not-waiting-rich-not-empty.csv")
     # concatDatasets("datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-thresh-peers.csv", "datasets/not-waiting-rich.csv")
+    # print("Waiting percentage")
+    # getPeersPercentage("datasets/waiting-thresh-peers.csv")
+    # print("Slowing percentage")
     # getPeersPercentage("datasets/slowing-thresh-peers.csv")
-    addActionCategory("datasets/speeding-thresh-peers.csv", "speed", "datasets/speeding-thresh-peers2.csv")
+    # print("Speeding percentage")
+    # getPeersPercentage("datasets/speeding-thresh-peers.csv")
+    addActionCategory("datasets/feb/speeding-thresh-peers.csv", "speed", "datasets/feb/speeding-thresh-peers-action.csv")
+    addActionCategory("datasets/feb/slowing-thresh-peers.csv", "slow", "datasets/feb/slowing-thresh-peers-action.csv")
+    addActionCategory("datasets/feb/waiting-thresh-peers.csv", "wait", "datasets/feb/waiting-thresh-peers-action.csv")
 
 
 if __name__ == "__main__":

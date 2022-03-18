@@ -82,7 +82,7 @@ def oneHotEncoder(data):
 
 def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
     es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=10)
-    mc = ModelCheckpoint("datasets/results/best_model-{}-{}-{}".format(d1, d2, epoch) +  ".h5", monitor='val_accuracy', 
+    mc = ModelCheckpoint("datasets/feb/results/best_model-{}-{}-{}".format(d1, d2, epoch) +  ".h5", monitor='val_accuracy', 
                         mode='max', verbose=1, save_best_only=True)
     model = Sequential()
     model.add(Dense(d1, input_shape=(7,), activation='relu'))
@@ -91,7 +91,7 @@ def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
 
     model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
     model.summary()
-    # model.save("datasets/results/{}-{}-{}".format(d1, d2, epoch))
+    model.save("datasets/feb/results/{}-{}-{}".format(d1, d2, epoch))
     print("Created model!")
 
     X_train = np.asarray(X_train)
@@ -113,7 +113,7 @@ def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
     hist_df = pd.DataFrame(history.history) 
 
     # save to csv:  
-    hist_csv_file = 'datasets/results/history-{}-{}-epoch-{}.json'.format(d1, d2, epoch) 
+    hist_csv_file = 'datasets/feb/results/history-{}-{}-epoch-{}.json'.format(d1, d2, epoch) 
     with open(hist_csv_file, mode='w') as f:
         hist_df.to_csv(f)
     
@@ -144,7 +144,7 @@ def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
     plt.xlabel('Epoch')
     plt.legend(['Train', 'Test'], loc='upper left')
     # plt.show()
-    plt.savefig("datasets/results/Model accuracy-{}-{}-epoch-{}.png".format(d1, d2, epoch))
+    plt.savefig("datasets/feb/results/Model accuracy-{}-{}-epoch-{}.png".format(d1, d2, epoch))
 
     plt.plot(history.history['loss']) 
     plt.plot(history.history['val_loss']) 
@@ -153,7 +153,7 @@ def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
     plt.xlabel('Epoch') 
     plt.legend(['Train', 'Test'], loc='upper left') 
     # plt.show()
-    plt.savefig("datasets/results/Model loss-{}-{}-epoch-{}.png".format(d1, d2, epoch))
+    plt.savefig("datasets/feb/results/Model loss-{}-{}-epoch-{}.png".format(d1, d2, epoch))
     plt.clf()
     print("Last acc: ", history.history["accuracy"][-1])
 
@@ -167,9 +167,9 @@ def everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2):
 
 
 def main():
-    train_data = pd.read_csv("datasets/training/training-peers-rich.csv", dtype='category')
-    test_data = pd.read_csv("datasets/training/test-peers-rich.csv", dtype='category')
-    validation_data = pd.read_csv("datasets/training/validation-peers-rich.csv", dtype='category')
+    train_data = pd.read_csv("datasets/feb/training/training-peers-rich.csv", dtype='category')
+    test_data = pd.read_csv("datasets/feb/training/test-peers-rich.csv", dtype='category')
+    validation_data = pd.read_csv("datasets/feb/training/validation-peers-rich.csv", dtype='category')
     print("Shape of train: ", train_data.shape)
 
     main_cols = ['relative_x', 
@@ -187,19 +187,19 @@ def main():
             'PeerAbsVelX',
             ]
 
-    X_train, Y_train = getNormalizedData(train_data, main_cols, [], False, "datasets/training/train_X_norm.csv")
+    X_train, Y_train = getNormalizedData(train_data, main_cols, [], False, "datasets/feb/training/train_X_norm.csv")
     Y_train = oneHotEncoder(Y_train)
-    X_val, Y_val = getNormalizedData(validation_data, main_cols, [], False, "datasets/training/val_X_norm.csv")
+    X_val, Y_val = getNormalizedData(validation_data, main_cols, [], False, "datasets/feb/training/val_X_norm.csv")
     Y_val = oneHotEncoder(Y_val)
-    X_test, Y_test = getNormalizedData(test_data, main_cols, [], False, "datasets/training/test_X_norm.csv")
+    X_test, Y_test = getNormalizedData(test_data, main_cols, [], False, "datasets/feb/training/test_X_norm.csv")
     Y_test = oneHotEncoder(Y_test)
     print("Done loading and normalizing!")
 
-    params = {
-        "epoch": [5, 11, 50, 100, 200],
-        "d1": [16, 32, 100, 250, 512],
-        "d2": [12, 16, 70, 150, 275]
-    }
+    # params = {
+    #     "epoch": [5, 11, 50, 100, 200],
+    #     "d1": [16, 32, 100, 250, 512],
+    #     "d2": [12, 16, 70, 150, 275]
+    # }
 
     # for i in range(4):
     #     epoch = params["epoch"][i]
@@ -207,15 +207,20 @@ def main():
     #     d2 = params["d2"][i]
     #     everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, epoch, d1, d2)
 
-    everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, 50, 100, 70)
-    print()
-    print("Best d1: ", best_d1)
-    print("Best d2: ", best_d2)
-    print("Best epoch: ", best_epoch)
+    everything(X_train, Y_train, X_val, Y_val, X_test, Y_test, 200, 512, 275)
+    # print()
+    # print("Best d1: ", best_d1)
+    # print("Best d2: ", best_d2)
+    # print("Best epoch: ", best_epoch)
 
     # Best d1:  100
     # Best d2:  70
     # Best epoch:  50
+
+    # Now best:
+    # Best d1: 250
+    # Best d2: 150
+    # Best epoch: 100
 
 if __name__ == "__main__":
     main()

@@ -1,8 +1,9 @@
-from transformTracks import getThreshold, getCenterPoint
+# from transformTracks import getThreshold, getCenterPoint
 from drawTrajectory import plotTrajectory
 import pandas as pd
 import itertools
 import numpy as np
+import matplotlib.pyplot as plt
 
 queenWaiting = 512
 leithWaiting = 1513
@@ -30,14 +31,38 @@ def testPandas():
     # print(df2)
 
 
-def getAverageVelocity(dataFile):
+def visualizeAvgVelocity(fileIn, visualFile):
+    data = pd.read_csv(fileIn, dtype='category')
+    data = data.loc[data.csv_name.str.contains("leith")]
+    print("Read data!")
+    data['AbsVelocity_X'] = abs(data['AbsVelocity_X'].astype(float))
+    data['AbsVelocity_Y'] = abs(data['AbsVelocity_X'].astype(float))
+    data['avg_vel'] = data[['AbsVelocity_X', 'AbsVelocity_Y']].mean(axis=1)
+    # data['avg_vel'] = data.apply(lambda row: getAverageVelocity(data['AbsVelocity_X'], data['AbsVelocity_Y']), axis=1, result_type='expand')
+    print("Got avg value!")
+    print("Avg value: \n", data['avg_vel'].to_numpy())
+    # data['avg_vel'] = data.apply(lambda row: \
+    #     (abs(row.AbsVelocity_X.astype(float)) + \
+    #     abs(row.AbsVelocity_Y.astype(float))).mean(), axis=1, result_type='expand')
+    data = data.sort_values(by=['avg_vel'], ascending=True)
+
+    x = np.arange(len(data))
+    y = data['avg_vel'].to_numpy()
+    print("Gen nrs: ", len(x))
+    print("Data len: ", len(y))
+    plt.bar(x, y)
+    # plt.show()
+    plt.savefig(visualFile)
+
+
+def getAverageVelocity(velX, velY):
     # Abs Res: 6.233401909964011 1.3921506215067325
     # Rel res: 
-    data = pd.read_csv(dataFile, dtype='category')
-    sub_X = abs(data['AbsVelocity_X'].astype(float))
-    sub_Y = abs(data['AbsVelocity_Y'].astype(float))
+    # data = pd.read_csv(dataFile, dtype='category')
+    sub_X = abs(velX.astype(float))
+    sub_Y = abs(velY.astype(float))
     sumXY = sub_X + sub_Y
-    return sumXY.mean()
+    return sumXY / 2
 
 
 def getNotWaitIds(waitIds, dataFile, outFile):
@@ -160,6 +185,7 @@ def saveWaitingSlowingSpeedingRecords(inFile, waitingFile, slowingFile, speeding
 
     data = data[data.columns.drop(list(data.filter(regex='Unnamed')))]
     chained = chained[chained.columns.drop(list(chained.filter(regex='Unnamed')))]
+    print("Cols of waiting: ", chained.columns)
 
     # Remove all records where velocity is 0
     not_waiting_data = pd.concat([data, chained]).drop_duplicates(keep=False)
@@ -206,8 +232,9 @@ def saveWaitingSlowingSpeedingRecords(inFile, waitingFile, slowingFile, speeding
     chained2 = chained2[chained2.columns.drop(list(chained2.filter(regex='Unnamed')))]
 
     not_waiting_data = pd.concat([not_waiting_data, chained2]).drop_duplicates(keep=False)
+    print("Cols: ", not_waiting_data.columns)
 
-    # chained.to_csv(waitingFile)
+    chained.to_csv(waitingFile)
     chained2.to_csv(slowingFile)
     not_waiting_data.to_csv(speedingFile)
 
@@ -312,16 +339,17 @@ def main():
     # splitIds("datasets/dataset-without-waiting.csv", "datasets/not-waiting-split-ids.csv", 328)
     # saveWaitingTracks("datasets/waitingIds.csv", 'datasets/intersections-dataset-before-thresh.csv', 'datasets/waiting-thresh-02.csv')
     # getBeforeThreshold("datasets/dataset-without-waiting.csv", "datasets/not-waiting-thresh.csv")
-    deleteExcessColumns("datasets/speeding-thresh-peers2.csv", 2, 0, "datasets/speeding-thresh-peers3.csv")
+    # deleteExcessColumns("datasets/speeding-thresh-peers2.csv", 2, 0, "datasets/speeding-thresh-peers3.csv")
     # getNotWaitIds('datasets/waiting-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-ids2.csv")
     # sumMean = getAverageVelocity("datasets/intersections-dataset-before-thresh.csv")
-    # saveWaitingSlowingSpeedingRecords("datasets/intersections-dataset-before-thresh.csv", 
-    #                                 "datasets/waiting-before-thresh.csv",
-    #                                 "datasets/slowing-before-thresh.csv",
-    #                                 "datasets/speeding-before-thresh.csv")
+    # saveWaitingSlowingSpeedingRecords("datasets/feb/intersections-dataset-before.csv", 
+    #                                 "datasets/feb/waiting-before-thresh.csv",
+    #                                 "datasets/feb/slowing-before-thresh.csv",
+    #                                 "datasets/feb/speeding-before-thresh.csv")
     # testLeftJoin()
     # print("Abs: ", sumMean)
     # checkOverlapping("datasets/speeding-before-thresh.csv", "datasets/waiting-before-thresh.csv")
+    # visualizeAvgVelocity("datasets/feb/intersections-dataset-before.csv", "datasets/feb/avg_vel.png")
 if __name__ == "__main__":
     main()
 

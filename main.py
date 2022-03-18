@@ -1,6 +1,6 @@
 import pandas as pd
 
-from helper import normalizeFeature, normalizeData
+from helper import normalizeFeature, normalizeData, balancedClasses, balanceDuplicating, balanceDupHack, getDataById
 from model import Model
 
 
@@ -23,46 +23,62 @@ def main():
     # Input data should be with uniqueId
     # data = pd.read_csv("../records/records_0-5000.csv", dtype='category')
     # data = pd.read_csv("additions/datasets/intersections-dataset-1000.csv", dtype='category')
-    data = pd.read_csv("additions/datasets/intersections-dataset-transformed-1000.csv", dtype='category')
-    print("Read the data!")
-    # Map destination to a number
-    data = normalizeFeature(data, 'destination', 'code')
+    # data = pd.read_csv("additions/datasets/intersections-dataset-transformed-1000.csv", dtype='category')
 
-    # uniqueId is the trackId
-    cols = ['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'uniqueId', 'code']
-    sequence = data[cols]
-    # Normalize the float values
-    norm = normalizeData(sequence[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity']])
-    res = pd.concat([norm, sequence[['uniqueId', 'code']]], ignore_index=True, axis=1)
-    res.columns = cols
 
-    for i in res.columns:
-        print(type(sequence[i]))
-    # y = data['code']
+    # From here normalization
+    # data = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed.csv", dtype='category')
+    # print("Read the data!")
+    # # Map destination to a number
+    # data = normalizeFeature(data, 'destination', 'code')
+
+    # # uniqueId is the trackId
+    # cols = ['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'uniqueId', 'code']
+    # sequence = data[cols]
+    # print("Classes: ", sequence.code.unique())
+    # # Normalize the float values
+    # # norm = normalizeData(sequence[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity']])
+    # # res = pd.concat([norm, sequence[['uniqueId', 'code']]], ignore_index=True, axis=1)
     
-    # model = Model(sequence,   # This was in
-    #                 0.5,    # dropout
-    #                 512,    # recurrent_width
-    #                 256,    # input_width
-    #                 0.03,   # lreaning_rate
-    #                 0.55,   # train size
-    #                 0.2,    # validation size
-    #                 0.25,   # test size
-    #                 5,      # network length
-    #                 20)     # epochs
-    # model.set_model() # This was in
-    # print("Created a model!")
+    # # res.columns = cols
+    # # res = balancedClasses(sequence, 'code')
+    # # balanceDuplicating(sequence, 'code', "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate.csv", cols)
+    # # balanceDupHack(sequence, 'code', "additions/datasets/feb/ids-to-use2.txt")
+    # # getDataById(sequence, "additions/datasets/feb/ids-to-use3.txt", "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate3.csv")
+    # # res.columns = cols
+    # # res.to_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate.csv")
+    # print("Normalized the data!")
+    sequence = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg.csv", dtype='category')
+    # classes = sequence.code.unique()
+    # for c in classes:
+    #     print("Len for class ", c, " is: ", len(sequence.loc[sequence.code == c]))
+
+    
+    # print("All classes: ", sequence.code.unique())
+    
+    model = Model(sequence,   # This was in
+                    0.5,    # dropout
+                    512,    # recurrent_width
+                    256,    # input_width
+                    0.03,   # lreaning_rate
+                    0.55,   # train size
+                    0.2,    # validation size
+                    0.25,   # test size
+                    5,      # network length
+                    20)     # epochs
+    model.set_model() # This was in
+    print("Created a model!")
 
     # # # model.get_model()
     # # # model.compile_model_functional()
-    # model.train() # This was in
-    # print("Trained the model!")
+    model.train() # This was in
+    print("Trained the model!")
 
-    # hist = model.get_history()
+    hist = model.get_history()
 
-    # # best_model = model.get_best_saved_model()
-    # model.evaluate(best_model, hist)
-    # print("Evaluated!")
+    best_model = model.get_best_saved_model()
+    model.evaluate(best_model, hist)
+    print("Evaluated!")
 
 if __name__ == "__main__":
     main()

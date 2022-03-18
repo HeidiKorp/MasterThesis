@@ -5,6 +5,7 @@ import tensorflow as tf
 import keras
 from keras.models import Sequential, load_model
 from keras.layers import Dense, Dropout, LSTM, RNN, StackedRNNCells, Input
+from tensorflow.keras.layers import BatchNormalization
 from tensorflow.keras.optimizers import Adam
 from keras.callbacks import EarlyStopping, ModelCheckpoint
 from math import floor
@@ -44,8 +45,6 @@ class Model:
         self.X_train, self.y_train = self.reshape_input(self.train_data, network_length)
         self.X_val, self.y_val = self.reshape_input(self.val_data, network_length)
         self.X_test, self.y_test = self.reshape_input(self.test_data, network_length)
-
-        print("X train shape: ", self.X_train.shape)
         self.model = None
 
 
@@ -77,14 +76,16 @@ class Model:
 
         inputs = Input(shape=(self.network_length, n_features,))
         dense = Dense(256, activation='relu', input_shape=(self.network_length, n_features,))(inputs)
+        norm = BatchNormalization()(dense)
         # Create a stack of LSTM with Peephole connection layers
         cells = [tfa.rnn.PeepholeLSTMCell(512, activation='relu') for _ in range(3)]
         # Wrap the Peephole cells with RNN and set return_sequences=True
-        rnn = tf.keras.layers.RNN(cells, return_sequences=True)(dense)
+        rnn = tf.keras.layers.RNN(cells, return_sequences=True)(norm)
         dropout = Dropout(0.5)(rnn)
         outputs = tf.keras.layers.Dense(3, activation='softmax')(dropout)
         model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
+        # Optimizer and loss are not defined!
         # compile model using mse as a measure of model performance
         opt = Adam(learning_rate=self.lr)
         model.compile(optimizer=opt, loss='mean_squared_error', metrics=['accuracy'])
@@ -99,8 +100,11 @@ class Model:
 
     def train(self):
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
-        mc = ModelCheckpoint("models/best_model_destination_"+ str(self.network_length) +  ".h5", monitor='val_accuracy', 
-                            mode='max', verbose=1, save_best_only=True)
+        mc = ModelCheckpoint("additions/destPred/", monitor='val_accuracy', 
+                            mode='max', verbose=1, save_best_only=False, save_freq='epoch')
+        # print("X train: ", self.X_train[:3])
+        # print("Y train: ", self.y_train[:3])
+        # print("Shape of X: ", self.X_train.shape, " y shape: ", self.y_train.shape)
         history = self.model.fit(
                 self.X_train, 
                 self.y_train, 
@@ -110,7 +114,7 @@ class Model:
                 )
 
         hist_df = pd.DataFrame(history.history)
-        hist_json_file = "models/history_" + str(self.network_length) + ".json"
+        hist_json_file = "additions/destPred/history_" + str(self.network_length) + ".json"
         with open(hist_json_file, mode='w') as f:
             hist_df.to_json(f)
         return history
@@ -166,19 +170,19 @@ class Model:
         plt.xlabel("timesteps", fontsize=18)
         plt.ylabel("loss", fontsize=18)
         plt.legend()
-        plt.savefig("models/train_loss_dest_" + str(self.network_length) + ".jpg")
+        plt.savefig("additions/destPred/train_loss_dest_" + str(self.network_length) + ".jpg")
         plt.plot(history['val_loss'], label='test')
         plt.xlabel("timesteps", fontsize=18)
         plt.ylabel("val_sloss", fontsize=18)
         plt.legend()
-        plt.savefig("models/val_loss_dest_" + str(self.network_length) + ".jpg")
+        plt.savefig("additions/destPred/val_loss_dest_" + str(self.network_length) + ".jpg")
         plt.close()
         # plt.legend()
         # plt.show()
 
 
     def get_best_saved_model(self):
-        return load_model("models/best_model_destination_" + str(self.network_length) + ".h5")
+        return load_model("additions/destPred/best_model_destination_" + str(self.network_length) + ".h5")
 
     def get_history(self):
-        return pd.read_json("models/history_" + str(self.network_length) + ".json", orient='records')
+        return pd.read_json("additions/destPred/history_" + str(self.network_length) + ".json", orient='records')

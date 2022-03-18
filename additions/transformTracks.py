@@ -1,6 +1,6 @@
 import pandas as pd
 import matplotlib.pyplot as plt
-from drawTrajectory import plotTrajectory
+from drawTrajectory import plotTrajectory, threshPoints
 from os import listdir
 from os.path import isfile, join
 import math
@@ -19,6 +19,10 @@ def transform(origin, point, angle):
     qx = ox + math.cos(angle) * (px - ox) - math.sin(angle) * (py - oy)
     qy = oy + math.sin(angle) * (px - ox) + math.cos(angle) * (py - oy)
     return qx, qy
+
+
+def getCenterPoint():
+    return -2.5, 10
 
 
 def rotate(x, y, rad):
@@ -60,64 +64,146 @@ def transformRow(relX, relY, origin, destination, csv_name):
     elif 'roslyn' in csv_name:
         return rotate(relX, relY, math.radians(5))
 
-# ROTATE THE THRESHOLDS!!!!!
-def getCenterPoint():
-    return -2.5, 10
+def replaceName(csv_name):
+    if "leith" in csv_name:
+        return "leith"
+    elif 'queen' in csv_name:
+        return 'queen'
+    elif 'orchard' in csv_name:
+        return 'orchard'
+    elif 'oliver' in csv_name:
+        return 'oliver'
+    elif 'roslyn' in csv_name:
+        return 'roslyn'
 
-def getFurthestThrest(data):
+def getDist(x1, x2, y1, y2):
+    return math.hypot(x1 - x2, y1 - y2)
+
+
+def getThreshDist(dist, origin, name, closeDict):
+    thresh = closeDict[name + "-" + origin]
+    # thresh = closestFirstPoints.loc[(closestFirstPoints.origin == origin) & \
+    #                                  (closestFirstPoints.name == name)]
+    # print("Thresh: ", thresh)
+    return thresh
+
+
+def insideOrOutsideThresh(dist, distThresh):
+    return dist <= distThresh
+
+def getClosestDict(closestDataset):
+    names = list(closestDataset.name)
+    origs = list(closestDataset.origin)
+    tuples = zip(names, origs)
+
+    new_list = [i[0] + "-" + i[1] for i in tuples]
+    d = dict(zip(new_list, list(closestDataset.dist)))
+    # print("D: \n", d)
+    return d
+
+
+def alignTracksClosestStart(fileIn, fileOut):
+    data = pd.read_csv(fileIn, dtype='category')
+    print("Read data!")
     roundabouts = ['leith', 'queen', 'oliver', 'orchard', 'roslyn']
+    # Get the furthest point for each intersection and direction
+    # Calculate their distance
+    # Select the row with the shortest distance
+    # Only select part of track that comes after it
+    x, y = getCenterPoint()
+    data['name'] = data.apply(lambda row : replaceName(row['csv_name']), axis=1, result_type='expand')
+    data['dist'] = data.apply(lambda row: getDist(x, float(row['relative_x_trans']), y, float(row['relative_y_trans'])), axis=1, result_type='expand')
+    print("Data columns: ", data.columns)
+    furIdx = data.groupby(['uniqueId'])['dist'].transform(max) == data['dist']
+    # furthestPoints = data[furIdx]
+    # furIdx = data.groupby('uniqueId')['dist'].max()
+    # print("Ids: ", furIdx2)
+    # print("Ids,not reindexed: ", data.groupby('uniqueId')['dist'].max().head(5))
+
+    furthestPoints = data[furIdx]
+
+    # furthestPoints.to_csv("datasets/feb/furthestPoints1.csv")
+    furthestPoints.to_csv("datasets/feb/furthestPoints.csv")
+    print("Furthest points: \n", furthestPoints.head())
+    
+    closeIdx = furthestPoints.groupby(['origin', 'name'])['dist'].transform(min) == furthestPoints['dist']
+    # closeIdx = data.groupby(['origin', 'name'])['dist'].min()
+    closestFirstPoints = furthestPoints[closeIdx]
+    print("Closest points: \n", closestFirstPoints)
+    closestFirstPoints.to_csv("datasets/feb/closestPoints.csv")
+
+    # closeDict = dict(zip(closestFirstPoints.name, closestFirstPoints.origin, closestFirstPoints.dist))
+    
+    # closeDict = closestFirstPoints[['name', 'origin', 'dist']].to_dict(orient='records')
+    closeDict = getClosestDict(closestFirstPoints)
+    print("Close dist: \n", closeDict)
+
+    data['threshDist'] = data.apply(lambda row: getThreshDist(float(row['dist']), row['origin'], row['name'], closeDict), axis=1, result_type='expand')
+    print("Dist head: \n", data.head(5))
+    data.to_csv("datasets/feb/aligned-thresh.csv")
+    data['insideThresh'] = data.apply(lambda row: insideOrOutsideThresh(float(row['dist']), float(row['threshDist'])), axis=1, result_type='expand')
+    print("Inside thresh: \n", data.head(5))
+
+    res = data.loc[data.insideThresh == True]
+    print("Res length: ", len(res))
+    print("Res head: \n", res.head(5))
+    res.to_csv(fileOut)
 
 
+    
+    # newData = pd.DataFrame()
+    # for name in roundabouts:
+    #     sub = data.loc[data.name == name]
+    #     directions = sub.origin.unique()
+    #     print("Directions: \n", directions)
+    #     for j in directions:
+    #         sub2 = sub.loc[sub.origin == j]
+    #         print("Sub: \n", sub2.head(5))
+    #         thresh = closestFirstPoints.loc[(closestFirstPoints.origin == j) & (closestFirstPoints.name == name)]
+    #         print("Thresh is: \n", thresh)
+    #         thresh_dist = float(thresh.dist)
+    #         print("Thresh dist: ", thresh_dist)
+    #         res = sub2.loc[sub2.dist <= thresh_dist]
+    #         print("** Res head: \n", res.head())
+    #         res.to_csv("datasets/feb/aligned-" + name + "-" + j + ".csv")
+            # df_mask = sub2['dist'] <= thresh_dist
+            # print("** Masked df size: ", len(df_mask))
+            # newData = newData.append(sub2[df_mask])
+            # df_mask.to_csv("datasets/feb/aligned-" + name + "-" + j + ".csv")
+    
+    # newData.to_csv(fileOut)
 
 
-def getThreshold():
-    # Roslyn
+def beforeThresh(x, y, csv_name, origin):
+    a, b, c, d, _ = threshPoints(csv_name)
+    p = np.array([x, y])
 
-    # Queen, Leith
-    north = 20
-    south = 0
-    west = -13
-    east = 7
-
-    # # Oliver
-    # north = 17
-    # south = 3
-    # west = -7
-    # east = 7
-
-    # # Orchard
-    # north = 17
-    # south = 0
-    # west = -7
-    # east = 10
-
-    # # Normal
-    # north = 17
-    # south = 5
-    # west = -7
-    # east = 6
-    return north, south, east, west
+    if origin == 'north': # Left of thresh, a-b
+        return np.cross(p-a, b-a) < 0
+    elif origin == 'east': # Right of thresh, b-c
+        return not np.cross(p-b, c-b) < 0
+    elif origin == 'south': # Right of thresh, c-d
+        return np.cross(p-c, d-c) < 0
+    elif origin == 'west': # Left of thresh, a-d
+        return np.cross(p-a, d-a) < 0
+    elif origin == 'NW': # Left of thresh, a-d
+        return not np.cross(p-a, d-a) < 0
+    elif origin == 'SE': # Right of thresh, b-c
+        return np.cross(p-b, c-b) < 0
+    elif origin == 'NE': # Right of thresh, a-b
+        return not np.cross(p-a, b-a) < 0
 
 
-# def createThresh(data):
-#     if data.csv_name.str.contains('leith'):
-#         data['roundabout_thresh'] = 
-
-
-def transformData(fileName, outFile):
-    data = pd.read_csv(fileName, dtype='category')
-    files = data['csv_name'].unique()
-
-    res = pd.DataFrame()
-    for i in files:
-        sub = data.loc[data['csv_name'] == i]
-        ids = sub['ObjectId'].unique()
-        for j in ids:
-            track = sub.loc[sub['ObjectId'] == j]
-            k = transform(track, track.iloc[0]['origin'], track.iloc[0]['destination'])
-            res = res.append(k)
-    res.columns = data.columns
-    res.to_csv(outFile)
+def getBeforeThresh(fileIn, outFile):
+    data = pd.read_csv(fileIn, dtype='category')
+    data['before'] = data.apply(lambda row: \
+                    beforeThresh(float(row['relative_x_trans']), \
+                                float(row['relative_y_trans']), \
+                                row['csv_name'], \
+                                row['origin']), axis=1, result_type='expand')
+    beforeData = data.loc[data.before == True]
+    beforeData.drop(columns=['before'])
+    beforeData.to_csv(outFile)
 
 
 def transformDataLines(fileName, outFile):
@@ -133,39 +219,16 @@ def transformDataLines(fileName, outFile):
 
 def plotData(fileName, saveName):
     data = pd.read_csv(fileName, dtype='category')
+    data = data.loc[(data.csv_name.str.contains("leith")) & (data.origin == 'north')]
+    ids = ['3', '4', '39', '51', '72', '82', '97', '112', '134', '138', '153', '159', '162', '198', '258', '280', '287', '295', '296', '323']
+    # print("Ids total: ", len(data.uniqueId.unique()))
+    # ids = list(data.uniqueId.unique())[:20]
+    # print("Ids: ", ids)
+    data = data.loc[data.apply(lambda x: x.uniqueId in ids, axis=1, result_type='expand')]
+    print("Read data!")
     centerX, centerY = getCenterPoint()
-    thresholds = getThreshold()
-    plotTrajectory(data, saveName, centerX, centerY, thresholds)
+    plotTrajectory(data, saveName, centerX, centerY)
 
-
-def getFilesTrans(path):
-    files = [f for f in listdir(path) if isfile(join(path, f))]
-    files = [path + f for f in files]
-    for i in files:
-        range_ = i.split("_")[1]
-        range_ = range_.split(".")[0]
-        outFile = path + "transformed/" + "records_" + range_ + "Trans.csv"
-        print("File: ", outFile)
-        transformData(i, outFile)
-
-
-def readFilesIntoOne(path, outFile):
-    files = [f for f in listdir(path) if isfile(join(path, f))]
-    files = [path + f for f in files]
-    out = open(outFile, 'a')
-    
-    firstFile = open(files[0], 'r')
-    firstLine = firstFile.readline()
-    out.write(firstLine)
-
-    for i in files:
-        print("File: ", i)
-        with open(i, 'r') as f:
-            rows = f.readlines()[1:]
-            res = ''.join(rows)
-            out.write(res)
-            f.close()
-    out.close()
 
 
 def main():
@@ -206,8 +269,8 @@ def main():
     # calculateThresholds("datasets/intersections-dataset-transformed.csv")
 
 
-    transformDataLines("../../records/records_25000-30000.csv", "datasets/testing/leith.csv")
-    plotData("datasets/testing/leith.csv", 'datasets/testing/leith-tracks.png')
+    # transformDataLines("../../records/records_25000-30000.csv", "datasets/testing/leith.csv")
+    # plotData("datasets/testing/leith.csv", 'datasets/testing/leith-tracks.png')
 
     # transformDataLines("../../records/records_1310000-1315000.csv", "datasets/testing/queen.csv")
     # plotData("datasets/testing/queen.csv", 'datasets/testing/queen-tracks.png')
@@ -221,6 +284,13 @@ def main():
     # transformDataLines("../../records/records_1930000-1935000.csv", "datasets/testing/roslyn.csv")
     # plotData("datasets/testing/roslyn.csv", 'datasets/testing/roslyn-tracks.png')
     # plotData("../../records/records_1840000-1845000.csv", "")
+
+    # transformDataLines("datasets/intersections-dataset.csv", "datasets/feb/intersections-dataset-transformed.csv")
+    # getBeforeThresh("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/intersections-dataset-before.csv")
+    # plotData("datasets/feb/intersections-dataset-before.csv", "datasets/feb/before-oliver.png")
+    # getFurthestThrest("datasets/testing/leith.csv")
+    # alignTracksClosestStart("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/intersections-dataset-transformed-aligned.csv")
+    plotData("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/leith-north-not-aligned.png")
 
 if __name__ == "__main__":
     main()
