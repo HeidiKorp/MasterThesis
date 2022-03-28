@@ -1,7 +1,8 @@
 import pandas as pd
 
-from helper import normalizeFeature, normalizeData, balancedClasses, balanceDuplicating, balanceDupHack, getDataById
+from helper import normalizeFeature, normalizeData, balancedClasses, balanceDuplicating, balanceDupHack, getDataById, binarizeFeature, oneHotEncode, codeToDest, codeBinToDest
 from model import Model
+import numpy as np
 
 
 def main():
@@ -28,27 +29,48 @@ def main():
 
     # From here normalization
     # data = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed.csv", dtype='category')
+
+
+    # data = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg2.csv", dtype='category')
     # print("Read the data!")
-    # # Map destination to a number
+    # # OneHot encode
+    # oneHotEncode(data[['destination']])
+
+
+    # # # Map destination to a number
     # data = normalizeFeature(data, 'destination', 'code')
+    # data['destination'] = data['code'].map(codeToDest)
+    # data.to_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg2.csv")
+    # # Map destination to binary
+    # data = binarizeFeature(data, 'code', 'codeBin')
 
     # # uniqueId is the trackId
-    # cols = ['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'uniqueId', 'code']
+    # cols = ['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'uniqueId', 'codeBin']
     # sequence = data[cols]
-    # print("Classes: ", sequence.code.unique())
+    # # print("Classes: ", sequence.codeBin.to_string().unique())
     # # Normalize the float values
-    # # norm = normalizeData(sequence[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity']])
-    # # res = pd.concat([norm, sequence[['uniqueId', 'code']]], ignore_index=True, axis=1)
+    # norm = normalizeData(sequence[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity']])
+    # res = pd.concat([norm, sequence[['uniqueId', 'codeBin']]], ignore_index=True, axis=1)
     
-    # # res.columns = cols
+    
+    # res.columns = cols
+    # print("Res cols:\n", res.columns)
     # # res = balancedClasses(sequence, 'code')
     # # balanceDuplicating(sequence, 'code', "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate.csv", cols)
     # # balanceDupHack(sequence, 'code', "additions/datasets/feb/ids-to-use2.txt")
     # # getDataById(sequence, "additions/datasets/feb/ids-to-use3.txt", "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate3.csv")
     # # res.columns = cols
-    # # res.to_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate.csv")
+    # res.to_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg-norm.csv")
     # print("Normalized the data!")
-    sequence = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg.csv", dtype='category')
+
+
+    # Norm2 is with destination
+    sequence = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg-norm2.csv", dtype='category')
+    sequence = sequence[sequence.columns.drop(list(sequence.filter(regex='Unnamed')))]
+    print("Cols: ", sequence.columns)
+    # oneHotEncode(sequence[['destination']])
+    # Shuffle the dataset
+    # shuffled = sequence.sample(frac=1).reset_index()
     # classes = sequence.code.unique()
     # for c in classes:
     #     print("Len for class ", c, " is: ", len(sequence.loc[sequence.code == c]))
@@ -64,8 +86,8 @@ def main():
                     0.55,   # train size
                     0.2,    # validation size
                     0.25,   # test size
-                    5,      # network length
-                    20)     # epochs
+                    25,      # network length
+                    200)    # epochs
     model.set_model() # This was in
     print("Created a model!")
 

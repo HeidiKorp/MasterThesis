@@ -4,12 +4,11 @@ import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 
 
-def twoPointsThresh(csv_name):
+def threshPoints(csv_name):
     # Return the two points from what to make the line for every direction
     # Then use the line to determine if other points are above or below it
     # North, east, south, west, north
     # Detemine if point should be left or right from line by comparing with center point!
-    print("Csv name: ", csv_name)
     if 'roslyn' in csv_name:
         return np.array([
            [-3, 20],
@@ -53,14 +52,39 @@ def twoPointsThresh(csv_name):
 
 
 def plotThreshLines(csv_name):
-    points = twoPointsThresh(csv_name)
+    points = threshPoints(csv_name)
     points_x = points[:,0]
     points_y = points[:,1]
     plt.plot(points_x, points_y, color='black')
 
 
-def plotTrajectory(data, fileName, centerX, centerY, thresholds):
-    plotThreshLines(data.csv_name[0]) # Assume there's only one csv_name
+def plotTrajectory(data, fileName, centerX, centerY):
+    # data = data.loc[data.csv_name.str.contains("oliver")]
+    # dirs = data.origin.unique()
+    # print(dirs)
+    # newData = pd.DataFrame(columns=data.columns)
+    # idd = []
+    # for i in dirs:
+    #     sub = data.loc[data.origin == i]
+    #     # print("Sub: \n", sub.head())
+    #     # newData = newData.append(sub.head(5), ignore_index=True)
+    #     ids = sub.uniqueId.unique()
+    #     idd.append(ids[:5])
+    
+    # idd = [item for sublist in idd for item in sublist]
+    # print("Idd: \n", idd)
+    # newData = data[data['uniqueId'].isin(idd)]
+    # # for i in idd:
+    # #     print("i: ", i)
+    # #     newData = newData.append(data.loc[data.uniqueId == i])
+    # # newData = data.loc[data.uniqueId in idd]
+    # print("New data: ", newData)
+    # data = newData
+    # print("Filtered data!")
+    # print("Columns: \n", data.columns)
+    # print("Csv name: \n", data.csv_name.head(5))
+    # plotThreshLines(data.name.iloc[0])
+    plotThreshLines(data.csv_name.iloc[0]) # Assume there's only one csv_name
 
     ids = data.uniqueId.unique()
     colors = cm.rainbow(np.linspace(0, 1, len(ids)))
@@ -69,9 +93,9 @@ def plotTrajectory(data, fileName, centerX, centerY, thresholds):
     for i in range(len(ids)):
         sub = data.loc[data['uniqueId'] == ids[i]]
         # Mark the first location
-        xS = round(float(sub.iloc[1]['relative_x_trans']), 8)
-        yS = round(float(sub.iloc[1]['relative_y_trans']), 8)
-        plt.plot(xS, yS, color='blue', marker="o")
+        # xS = round(float(sub.iloc[1]['relative_x_trans']), 8)
+        # yS = round(float(sub.iloc[1]['relative_y_trans']), 8)
+        # plt.plot(xS, yS, color='blue', marker="o")
         # Round all the coordinates
         x = round(sub['relative_x_trans'].astype(float), 3)
         y = round(sub['relative_y_trans'].astype(float), 3)
@@ -98,7 +122,7 @@ def plotTrajectory(data, fileName, centerX, centerY, thresholds):
     # plt.plot([west, west], [north, south], color='black')
     # plt.plot([east, east], [north, south], color='black')
 
-    # plt.show()
+    plt.show()
     plt.axis('equal')
     plt.savefig(fileName, transparent=True)
     plt.close()

@@ -4,6 +4,7 @@ from sklearn.preprocessing import StandardScaler, LabelEncoder, OneHotEncoder
 import ast
 import matplotlib.pyplot as plt
 import matplotlib
+from sklearn.utils import shuffle
 
 
 def copyFirstLines(inFile, outFile, n):
@@ -105,10 +106,76 @@ def dupDataframe():
     newdf = pd.DataFrame(np.repeat(data.values, 3, axis=0))
     newdf.columns = data.columns
     print(newdf)
+
+
+def renameColVals():
+    # Creating the DataFrame
+    df = pd.DataFrame({'Date':['10/2/2011', '11/2/2011', '12/2/2011', '13/2/2011'],
+                        'Event':['Music', 'Poetry', 'Theatre', 'Comedy'],
+                        'Cost':[10000, 5000, 15000, 2000]})
+    # Create a dictionary using which we
+    # will remap the values
+    la = {'Music' : 'M', 'Poetry' : 'P', 'Theatre' : 'T', 'Comedy' : 'C'}
+    # Print the dictionary
+    print(dict)
+    # Remap the values of the dataframe
+    df = df.replace({"Event": la})
+    # Print the dataframe
+    print(df)
+
+def shuf():
+    a = [1, 2, 3]
+    b = ['a', 'b', 'c']
+    a, b = shuffle(np.array(a), np.array(b))
+    print(a, b)
+
+
+def oneHotEncode():
+    data =  [
+        [['SW'],['SW'], ['SW'], ['SW'], ['SW']],
+        [['south'],['south'], ['south'], ['south'], ['south']]
+        ]
+    ohe = OneHotEncoder()
+    a = data[0]
+    res = [pd.DataFrame(ohe.fit_transform(x).toarray()) for x in data]
+    # res = pd.DataFrame(ohe.fit_transform(data).toarray())
+    print(res)
+
+
+def stepsToOne():
+    X = np.array([
+        [
+            [0, 1, 2, 3],
+            [4, 5, 6, 7]
+        ],
+        [
+            [1, 9, 2, 8],
+            [2, 7, 3, 6]
+        ]
+
+        ])
+    print(X)
+    res = np.concatenate(X, axis=0)
+    print(res)
+
+
+def reshape():
     
+    X = np.array([[1, 2, 3], [4, 5, 6], [7, 8, 9], [11, 22, 33]])
+    a = X.shape[0] // 2
+    print(X.shape)
+    X = X.reshape(a, 2, X.shape[1])
+    print(X.shape)
+    print(X)
+
+
 def main():
 
-    dupDataframe()
+    reshape()
+    # stepsToOne()
+    # oneHotEncode()
+    # shuf()
+    # dupDataframe()
     # # One-hot encoding
     # data = ['cold', 'cold', 'warm', 'cold', 'hot', 'hot']
     # values = np.array(data)
@@ -134,6 +201,7 @@ def main():
 
     # ax.plot(data_points_x, data_points_y, marker="o", color="k")
     # datasetToDict()
+    # renameColVals()
 
 if __name__ == "__main__":
     main()
