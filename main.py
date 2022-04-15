@@ -67,7 +67,9 @@ def main():
     # Norm2 is with destination
     sequence = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg-norm2.csv", dtype='category')
     sequence = sequence[sequence.columns.drop(list(sequence.filter(regex='Unnamed')))]
-    print("Cols: ", sequence.columns)
+    # print("Cols: ", sequence.columns)
+
+    # sequence = None
     # oneHotEncode(sequence[['destination']])
     # Shuffle the dataset
     # shuffled = sequence.sample(frac=1).reset_index()
@@ -86,8 +88,10 @@ def main():
                     0.55,   # train size
                     0.2,    # validation size
                     0.25,   # test size
-                    25,      # network length
-                    200)    # epochs
+                    5,      # network length
+                    200,
+                    "one_layer3",
+                    False)    # epochs
     model.set_model() # This was in
     print("Created a model!")
 

@@ -14,7 +14,7 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
 
-from helper import get_train_val_test, split_sequences, oneHotEncode, stepsToOne
+from helper import get_train_val_test, split_sequences, oneHotEncode, stepsToOne, reshapeData, codeToDest, normalizeData
 
 # https://towardsdatascience.com/building-a-deep-learning-model-using-keras-1548ca149d37
 # https://machinelearningmastery.com/how-to-develop-lstm-models-for-time-series-forecasting/
@@ -33,31 +33,90 @@ class Model:
                     validation_size,
                     test_size,
                     network_length,
-                    epochs):
+                    epochs,
+                    fileName,
+                    newData):
         self.dropout = dropout
         self.input_width = input_width
         self.lr = lr
         self.recurrent_width = recurrent_width
         self.epochs = epochs
         self.network_length = network_length
+        self.fileName = fileName
         
         # First onehot
+        # Train/val/test
         # Reshape
         # Shuffle
+
+        y_col_nr = len(codeToDest)
+
+        if newData:
+            # One-hot encode the y values
+            onehots = oneHotEncode(data[['destination']])
+            data = data.drop(['codeBin', 'destination'], axis=1)
+            data = normalizeData(data)
+            data = pd.concat([data, onehots], axis=1)
+
+            self.train_data, self.val_data, self.test_data = \
+            get_train_val_test(data, train_size, validation_size, test_size)
+
+            self.train_data.to_csv("additions/destPred/train.csv")
+            self.val_data.to_csv("additions/destPred/validation.csv")
+            self.test_data.to_csv("additions/destPred/test.csv")
+
+        self.train_data = pd.read_csv("additions/destPred/train.csv")
+        self.val_data = pd.read_csv("additions/destPred/validation.csv")
+        self.test_data = pd.read_csv("additions/destPred/test.csv")
+
+        self.train_data = self.train_data.to_numpy()
+        self.val_data = self.val_data.to_numpy()
+        self.test_data = self.test_data.to_numpy()
+
+        # print("Shape x train: ", self.train_data.shape)
+        # print(type(self.train_data))
+        # # print(self.train_data[:3])
+        # print(self.train_data[:3, :3])
+
+        self.X_train, self.y_train = self.train_data[:, :-y_col_nr-1], self.train_data[:, -y_col_nr:]
+        self.X_val, self.y_val = self.val_data[:, :-y_col_nr-1], self.val_data[:, -y_col_nr:]
+        self.X_test, self.y_test = self.test_data[:, :-y_col_nr-1], self.test_data[:, -y_col_nr:]
+
+        # Numpy reshape
+        self.X_train = reshapeData(self.X_train, self.network_length)
+        self.y_train = reshapeData(self.y_train, self.network_length)
+
+        self.X_val = reshapeData(self.X_val, self.network_length)
+        self.y_val = reshapeData(self.y_val, self.network_length)
+
+        self.X_test = reshapeData(self.X_test, self.network_length)
+        self.y_test = reshapeData(self.y_test, self.network_length)
+
+        # self.X_train, self.y_train = self.reshape_input(self.train_data, network_length)
+        # self.X_val, self.y_val = self.reshape_input(self.val_data, network_length)
+        # self.X_test, self.y_test = self.reshape_input(self.test_data, network_length)
+       
+        self.X_train, self.y_train = shuffle(np.array(self.X_train), np.array(self.y_train))
+        self.X_val, self.y_val = shuffle(np.array(self.X_val), np.array(self.y_val))
+        self.X_test, self.y_test = shuffle(np.array(self.X_test), np.array(self.y_test))
+
+        # print("Val head: \n", self.X_val[:3])
+
+        # print("TrainX: \n", type(self.X_train))
+        # print(self.X_train[:3])
+        # print("Train y:\n", type(self.y_train))
+        # print(self.y_train[:3])
         
-        
-        onehots = oneHotEncode(data[['destination']]).to_numpy()
-        data = data.drop(['codeBin', 'destination'], axis=1)
-        X = data.to_numpy()
-        X = X[:,:-1]
-        print("X shape: ", X.shape)
-        print("Len X: ", len(X))
-        a = X.shape[0] // self.network_length
-        b = a * self.network_length
-        X = np.reshape(X[:b], (a, self.network_length, X.shape[1]))
-        y = np.reshape(onehots[:b], (a, self.network_length, onehots.shape[1]))
-        X, y = shuffle(np.array(X), np.array(y))
-        print("Shape X: \n", X.shape)
+        # X = data.to_numpy()
+        # X = X[:,:-1]
+        # print("X shape: ", X.shape)
+        # print("Len X: ", len(X))
+        # a = X.shape[0] // self.network_length
+        # b = a * self.network_length
+        # X = np.reshape(X[:b], (a, self.network_length, X.shape[1]))
+        # y = np.reshape(onehots[:b], (a, self.network_length, onehots.shape[1]))
+        # X, y = shuffle(np.array(X), np.array(y))
+        # print("Shape X: \n", X.shape)
 
         # print("Hots: \n", onehots.head())
         # data = pd.concat([data.reset_index(), onehots.reset_index()], axis=1)
@@ -70,8 +129,8 @@ class Model:
         # X, y = shuffle(np.array(X), np.array(y))
         # X, y = stepsToOne(X, y)
 
-        print("X firsts: \n", X[:3])
-        print("Y firsts: \n", y[:3])
+        # print("X firsts: \n", X[:3])
+        # print("Y firsts: \n", y[:3])
         # l = list(reshaped)
         # print("First el: \n", l[0])
         # random.shuffle(l)
@@ -82,10 +141,10 @@ class Model:
         # shuffled = reshaped.sample(frac=1).reset_index()
         # Split the data to train, validation and test sets
 
-        self.X_train, self.X_test, self.y_train, self.y_test \
-                = train_test_split(X, y, test_size=test_size, random_state=1)
-        self.X_train, self.X_val, self.y_train, self.y_val \
-                = train_test_split(self.X_train, self.y_train, test_size=validation_size, random_state=1)
+        # self.X_train, self.X_test, self.y_train, self.y_test \
+        #         = train_test_split(X, y, test_size=test_size, random_state=1)
+        # self.X_train, self.X_val, self.y_train, self.y_val \
+        #         = train_test_split(self.X_train, self.y_train, test_size=validation_size, random_state=1)
 
         self.X_train=np.asarray(self.X_train).astype(np.float)
         self.y_train=np.asarray(self.y_train).astype(np.float)
@@ -139,6 +198,7 @@ class Model:
         # Wrap the Peephole cells with RNN and set return_sequences=True
         rnn = tf.keras.layers.RNN(cells, return_sequences=True)(dense)
         # lstm = LSTM(512, activation='relu', return_sequences=True)(dense)
+        # dropout = Dropout(0.5)(rnn)
         outputs = tf.keras.layers.Dense(8, activation='softmax')(rnn)
         model = tf.keras.Model(inputs=inputs, outputs=outputs)
 
@@ -197,7 +257,7 @@ class Model:
 
     def train(self):
         es = EarlyStopping(monitor='val_loss', mode='min', verbose=1, patience=50)
-        mc = ModelCheckpoint("additions/destPred/one_layer_25/best_model_destination_"+ str(self.network_length) +  ".h5", monitor='val_accuracy', 
+        mc = ModelCheckpoint("additions/destPred/" + self.fileName + "_" + str(self.network_length) + "/best_model_destination_"+ str(self.network_length) +  ".h5", monitor='val_accuracy', 
                             mode='max', verbose=1, save_best_only=True, save_freq='epoch')
         # print("X train: ", self.X_train[:3])
         # print("Y train: ", self.y_train[:3])
@@ -211,7 +271,7 @@ class Model:
                 )
 
         hist_df = pd.DataFrame(history.history)
-        hist_json_file = "additions/destPred/one_layer_25/history_" + str(self.network_length) + ".json"
+        hist_json_file = "additions/destPred/" + self.fileName + "_" + str(self.network_length) + "/history_" + str(self.network_length) + ".json"
         with open(hist_json_file, mode='w') as f:
             hist_df.to_json(f)
         return history
@@ -267,19 +327,19 @@ class Model:
         plt.xlabel("timesteps", fontsize=18)
         plt.ylabel("loss", fontsize=18)
         plt.legend()
-        plt.savefig("additions/destPred/one_layer_25/train_loss_dest_" + str(self.network_length) + ".jpg")
+        plt.savefig("additions/destPred/" + self.fileName + "_" + str(self.network_length) + "/train_loss_dest_" + str(self.network_length) + ".jpg")
         plt.plot(history['val_loss'], label='test')
         plt.xlabel("timesteps", fontsize=18)
         plt.ylabel("val_sloss", fontsize=18)
         plt.legend()
-        plt.savefig("additions/destPred/one_layer_25/val_loss_dest_" + str(self.network_length) + ".jpg")
+        plt.savefig("additions/destPred/" + self.fileName + "_" + str(self.network_length) + "/val_loss_dest_" + str(self.network_length) + ".jpg")
         plt.close()
         # plt.legend()
         # plt.show()
 
 
     def get_best_saved_model(self):
-        return load_model("additions/destPred/one_layer_25/best_model_destination_" + str(self.network_length) + ".h5")
+        return load_model("additions/destPred/" + self.fileName + "_" + str(self.network_length) + "/best_model_destination_" + str(self.network_length) + ".h5")
 
     def get_history(self):
-        return pd.read_json("additions/destPred/one_layer_25/history_" + str(self.network_length) + ".json", orient='records')
+        return pd.read_json("additions/destPred/" + self.fileName + "_" + str(self.network_length) + "/history_" + str(self.network_length) + ".json", orient='records')

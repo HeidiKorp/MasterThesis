@@ -61,6 +61,10 @@ def normalizeData(data):
     res = sc.fit_transform(data)
     return pd.DataFrame(res, columns=data.columns)
 
+def reshapeData(data, net_len):
+    a = data.shape[0] // net_len
+    b = a * net_len
+    return np.reshape(data[:b], (a, net_len, data.shape[1]))
 
 def balancedClasses(data, classCol):
     classes = data[classCol].unique()
@@ -205,7 +209,7 @@ def split_sequences(data, n_steps, track_id):
         else:
             # seq_x, seq_y = data[i:end_ix, :-2], data[end_ix-1, -1]
             # -2 to remove uniqueId from trainable columns
-            seq_x, seq_y = data[i:end_ix, :-y_col_nr-2], data[i:end_ix, -y_col_nr:]
+            seq_x, seq_y = data[i:end_ix, :-y_col_nr-1], data[i:end_ix, -y_col_nr:]
             # print("Seq x: \n", seq_x)
             # print("Seq y: \n", seq_y)
             # seq_y = [[x] for x in seq_y]
@@ -224,10 +228,15 @@ def get_train_val_test(data, train_size, val_size, test_size):
     unique_tracks = data['uniqueId'].unique()
     nr_tracks = len(unique_tracks)
 
-    # Get train, val, test size in tracks
+    # Get train, val, test size in tracks, add previous nr to get id
     train_z = round(nr_tracks * train_size)
     val_z = round(nr_tracks * val_size) + train_z
     test_z = round(nr_tracks * test_size) + val_z
+
+    print("Nr tracks: ", nr_tracks)
+    print("Train size: ", train_z)
+    print("Val size: ", val_z)
+    print("Test size: ", test_z)
     # Shuffle tracks
     random.shuffle(unique_tracks)
     # Get row indexes where uniqueId equals the n first track numbers
@@ -240,6 +249,11 @@ def get_train_val_test(data, train_size, val_size, test_size):
 
     test_idx = data.index[data['uniqueId'].isin(unique_tracks[val_z:])].tolist()
     test = data.iloc[test_idx]
+
+    print("Dataset lengths:")
+    print(len(train))
+    print(len(val))
+    print(len(test))
     return train, val, test
 
 
