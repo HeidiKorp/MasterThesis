@@ -42,10 +42,11 @@ def binarizeFeature(data, feature, newCol):
 def normalizeFeature(data, feature, newCol):
     data[newCol] = le.fit_transform(data[feature])
     encoding = dict(zip(le.classes_, le.transform(le.classes_)))
-    output = open('additions/datasets/destinationEncoding.pkl', 'wb')
-    pickle.dump(encoding, output)
-    output.close()
-    return data
+    print(encoding)
+    # output = open('additions/datasets/destinationEncoding.pkl', 'wb')
+    # pickle.dump(encoding, output)
+    # output.close()
+    # return data
     # return dict(zip(le.classes_, le.transform(le.classes_)))
 
 def unNormalizeFeature(dataCol):
@@ -62,10 +63,13 @@ def normalizeData(data):
     return pd.DataFrame(res, columns=data.columns)
 
 def reshapeData(data, net_len):
+    # print("Data shape: ", data.shape)
     a = data.shape[0] // net_len
     b = a * net_len
     return np.reshape(data[:b], (a, net_len, data.shape[1]))
 
+
+# All classes are balanced based on the class with fewest datapoints
 def balancedClasses(data, classCol):
     classes = data[classCol].unique()
     print("CLasses: ", classes)
@@ -93,9 +97,13 @@ def balancedClasses(data, classCol):
     print("New data len: ", len(newData))
     return newData
 
+# Select tracks to use so that each class would be balanced based on the avg nr of datapoints in a class
+# Make sure no class and no id is selected twice
 def balanceDupHack(data, classCol, outFile):
+    classes = data[classCol].unique()
+    print("*** Classes are: ", classes)
     out = open(outFile, 'a')
-    classes = [7, 2, 0, 1, 3]
+    # classes = [7, 2, 0, 1, 3] # Why this?
     print("Id type: ", type(data.uniqueId.unique()[0]))
     avgSam = 474420
     currentSum = 0
@@ -105,20 +113,21 @@ def balanceDupHack(data, classCol, outFile):
         ids = sub.uniqueId.unique()
         used_ids = []
         if len(sub) < avgSam:
-            ids_to_use = list(sub.uniqueId.unique())
+            ids_to_use = list(ids)
             currentSum = len(sub)
         while currentSum <= avgSam:
             sel_id = random.choice(ids)
-            # while sel_id in used_ids:
+            # while sel_id in used_ids and len(used_ids) != len(ids):
             #     sel_id = random.choice(ids)
             used_ids.append(sel_id)
             ids_to_use.append(sel_id)
             currentSum += len(data.loc[data.uniqueId == sel_id])
+            print("Current sum: ", currentSum)
 
         listToStr = ' '.join([str(elem) for elem in ids_to_use])
         allIds = ' '.join([str(elem) for elem in ids])
-        out.write("Ids to use for class " + str(c) + " are: " + listToStr + "\n\n")
-        out.write("All ids for class " + str(c) + " are: " + allIds + "\n\n")
+        out.write(listToStr)
+        # out.write("All ids for class " + str(c) + " are: " + allIds + "\n\n")
         currentSum = 0
         ids_to_use = []
     out.close()
@@ -128,7 +137,7 @@ def writeIdData(data, mul, outFile):
     # print("Data is: ", data.head())
     # newdf = pd.DataFrame(np.repeat(data.values, mul, axis=0))
     newdf = pd.concat([data]*mul).sort_index()
-    print("New data is: ", newdf.head())
+    # print("New data is: ", newdf.head())
     newdf.columns = data.columns
     newdf.to_csv(outFile, mode='a')
 
@@ -153,6 +162,7 @@ def countClassLength(fileIn):
         sub = data.loc[data.code == cl]
         print("Length for class " + str(cl) + " is: " + str(len(sub)))
     
+# Find out the min, avg and max class samples
 def balanceDuplicating(data, classCol, outFile, cols):
     classes = data[classCol].unique()
     print("CLasses: ", classes)
@@ -220,6 +230,63 @@ def split_sequences(data, n_steps, track_id):
     print("Seq x:\n", X[:3])
     print("Y is: \n", y[:3])
     return X, y
+    
+def evenNrDatapoints(data, n_steps):
+    ids = data.uniqueId.unique()
+    # res = pd.DataFrame(columns=data.columns)
+    ids_to_use = []
+    for i in ids:
+        # print("*** id: ", i)
+        sub = data.loc[data.uniqueId == i]
+        sub = sub.drop(['uniqueId'], axis=1)
+        sub = sub[sub.columns.drop(list(sub.filter(regex='Unnamed')))]
+
+        ixs = list(sub.index)
+        # print("Indexes: ", ixs)
+        # print("** Len shape 0: ", sub.shape[0])
+        a = sub.shape[0] // n_steps
+        b = a * n_steps
+        c = n_steps - (sub.shape[0] - b)
+        last_idx = sub[len(sub) -1:].index[0]
+
+        ixs.extend(last_idx.repeat(c))
+        # print(ixs)
+        ids_to_use.extend(ixs)
+        # print("Gettin dup")
+        # dups = sub.loc[last_idx.repeat(c)].reset_index(drop=True)
+        # sub = sub.append(dups)
+        # res = res.append(sub)
+        # print("Finished id: ", i)
+        # break
+    return data.loc[ids_to_use].reset_index(drop=True)
+
+def split_tracks(data, n_steps):
+    ids = data.uniqueId.unique()
+    X, y = list(), list()
+    y_col_nr = len(codeToDest)
+    for i in ids:
+        sub = data.loc[data.uniqueId == i]
+        sub = sub.drop(['uniqueId'], axis=1)
+        sub = sub[sub.columns.drop(list(sub.filter(regex='Unnamed')))]
+        a = sub.shape[0] // n_steps
+        b = a * n_steps
+        c = n_steps - (sub.shape[0] - b)
+        last_idx = sub[len(sub) -1:].index[0]
+        dups = sub.loc[last_idx.repeat(c)].reset_index(drop=True)
+        sub = sub.append(dups)
+        y_mark = len(sub.columns)-y_col_nr
+        x_data = sub.iloc[:,:y_mark]
+        y_data = sub.iloc[:,y_mark:]
+        nr_blocks = x_data.shape[0] // n_steps
+
+        x_data = np.asarray(x_data)
+        y_data = np.asarray(y_data)
+        X.append(x_data.reshape((nr_blocks, n_steps, x_data.shape[1])))
+        y.append(y_data.reshape((nr_blocks, n_steps, y_data.shape[1])))
+    X = np.array(X)
+    y = np.array(y)
+    return X, y
+
 
 
 def get_train_val_test(data, train_size, val_size, test_size):
@@ -281,6 +348,25 @@ def stepsToOne(X, y):
     res_X = np.concatenate(X, axis=0)
     res_y = np.concatenate(y, axis=0)
     return res_X, res_y
+
+
+def getMultiDict(fileIn, fileOut):
+    fil = open(fileIn, 'r')
+    out = open(fileOut, 'a')
+
+    string = fil.read()
+    ids = string.split(" ")
+    print("First id is: ", ids[0])
+    d = {x:ids.count(x) for x in ids}
+    counter = 1
+    for key, val in d.items():
+        res = str(counter) + " " + str(key) + " " + str(val) + "\n"
+        out.write(res)
+        counter += 1
+    out.close()
+    fil.close()
+
+
 
 # delFirstRows("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate3.csv", "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate3-clean.csv")
 # countClassLength("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate.csv")

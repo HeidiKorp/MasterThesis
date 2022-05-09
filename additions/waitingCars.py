@@ -213,6 +213,9 @@ def saveWaitingSlowingSpeedingRecords(inFile, waitingFile, slowingFile, speeding
     print("Avg abs: ", abs_avg)
     print("Rel abs: ", rel_avg)
 
+    # Avg abs:  7.222252180772157
+    # Rel abs:  7.231373275462989
+
     # Filter out records, whose speed is lower than the average
     # abs2 = not_waiting_data.loc[not_waiting_data['abs_vel_sum'] <= 3.35]
     # rel2 = not_waiting_data.loc[not_waiting_data['rel_vel_sum'] <= 3.35]
@@ -234,9 +237,9 @@ def saveWaitingSlowingSpeedingRecords(inFile, waitingFile, slowingFile, speeding
     not_waiting_data = pd.concat([not_waiting_data, chained2]).drop_duplicates(keep=False)
     print("Cols: ", not_waiting_data.columns)
 
-    chained.to_csv(waitingFile)
-    chained2.to_csv(slowingFile)
-    not_waiting_data.to_csv(speedingFile)
+    # chained.to_csv(waitingFile)
+    # chained2.to_csv(slowingFile)
+    # not_waiting_data.to_csv(speedingFile)
 
 
 
@@ -342,10 +345,10 @@ def main():
     # deleteExcessColumns("datasets/speeding-thresh-peers2.csv", 2, 0, "datasets/speeding-thresh-peers3.csv")
     # getNotWaitIds('datasets/waiting-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-ids2.csv")
     # sumMean = getAverageVelocity("datasets/intersections-dataset-before-thresh.csv")
-    # saveWaitingSlowingSpeedingRecords("datasets/feb/intersections-dataset-before.csv", 
-    #                                 "datasets/feb/waiting-before-thresh.csv",
-    #                                 "datasets/feb/slowing-before-thresh.csv",
-    #                                 "datasets/feb/speeding-before-thresh.csv")
+    saveWaitingSlowingSpeedingRecords("datasets/feb/intersections-dataset-before.csv", 
+                                    "datasets/feb/waiting-before-thresh.csv",
+                                    "datasets/feb/slowing-before-thresh.csv",
+                                    "datasets/feb/speeding-before-thresh.csv")
     # testLeftJoin()
     # print("Abs: ", sumMean)
     # checkOverlapping("datasets/speeding-before-thresh.csv", "datasets/waiting-before-thresh.csv")

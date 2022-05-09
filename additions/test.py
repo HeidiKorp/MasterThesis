@@ -171,7 +171,7 @@ def reshape():
 
 def main():
 
-    reshape()
+    # reshape()
     # stepsToOne()
     # oneHotEncode()
     # shuf()
@@ -202,6 +202,32 @@ def main():
     # ax.plot(data_points_x, data_points_y, marker="o", color="k")
     # datasetToDict()
     # renameColVals()
+
+    a = [0.0, 0.0, 0.0]
+    b = [1.0, 2.0, 3.0]
+    c = [4.0, 5.0, 6.0]
+    d = [7.0, 8.0, 9.0]
+    vals = [a,b,c,d]
+    vals = np.array(vals).T
+    vals = vals.tolist()
+    print(vals)
+    res = vals[0] + vals[1] + vals[2]
+    res = [[x] for x in res]
+    res = np.array(res).T
+    print(res)
+    print(pd.DataFrame(res))
+
+    mama = pd.DataFrame([[2, 3, 4 ]])
+    print("Mama\n", mama)
+    sq = mama.squeeze()
+    yaya = pd.DataFrame([2,3,4])
+    print("Type sq: ", type(sq), " type yaya: ", type(yaya))
+    print(sq)
+    # vals = [a,b]
+    # vals = np.array(vals)
+    # print(vals)
+    # la = pd.DataFrame(vals)
+    # print(la)
 
 if __name__ == "__main__":
     main()

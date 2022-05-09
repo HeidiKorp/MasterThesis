@@ -217,10 +217,13 @@ def transformDataLines(fileName, outFile):
     data.to_csv(outFile)
 
 
-def plotData(fileName, saveName):
-    data = pd.read_csv(fileName, dtype='category')
-    data = data.loc[(data.csv_name.str.contains("leith")) & (data.origin == 'north')]
-    ids = ['3', '4', '39', '51', '72', '82', '97', '112', '134', '138', '153', '159', '162', '198', '258', '280', '287', '295', '296', '323']
+def plotData(data, saveName, csvName):
+    # data = pd.read_csv(fileName, dtype='category')
+    # data = data.loc[(data.csv_name.str.contains("leith")) & (data.origin == 'north')]
+    data = data.loc[(data.csv_name.str.contains(csvName))]
+    ids = data.uniqueId.unique()
+    ids = ids[:10]
+    # ids = ['3', '4', '39', '51', '72', '82', '97', '112', '134', '138', '153', '159', '162', '198', '258', '280', '287', '295', '296', '323']
     # print("Ids total: ", len(data.uniqueId.unique()))
     # ids = list(data.uniqueId.unique())[:20]
     # print("Ids: ", ids)
@@ -290,7 +293,14 @@ def main():
     # plotData("datasets/feb/intersections-dataset-before.csv", "datasets/feb/before-oliver.png")
     # getFurthestThrest("datasets/testing/leith.csv")
     # alignTracksClosestStart("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/intersections-dataset-transformed-aligned.csv")
-    plotData("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/leith-north-not-aligned.png")
+    # plotData("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/leith-north-not-aligned.png")
+    beforeFile = "datasets/feb/intersections-dataset-before.csv"
+    transFile = "datasets/feb/intersections-dataset-transformed.csv"
+
+    transData = pd.read_csv(transFile, dtype='category')
+    beforeData = pd.read_csv(beforeFile, dtype='category')
+    plotData(beforeData, "datasets/feb/plots/queen-before.png", 'queen')
+    plotData(transData, "datasets/feb/plots/queen-trans.png", 'queen')
 
 if __name__ == "__main__":
     main()

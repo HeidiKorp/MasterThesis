@@ -59,6 +59,7 @@ def plotThreshLines(csv_name):
 
 
 def plotTrajectory(data, fileName, centerX, centerY):
+    print("Hey")
     # data = data.loc[data.csv_name.str.contains("oliver")]
     # dirs = data.origin.unique()
     # print(dirs)
@@ -111,7 +112,7 @@ def plotTrajectory(data, fileName, centerX, centerY):
 
         # plt.scatter(xS, yS, s=20, color=colors[i])
         # plt.scatter(x,y, color=colors[i], s=5)
-        plt.scatter(x,y, color=colors[i], s=1)
+        plt.scatter(x,y, color=colors[i], s=3)
         plt.axis('equal')
         # plt.plot(x,y, color=colors[i])
     plt.plot(centerX, centerY, color='red', marker="o")
@@ -122,7 +123,7 @@ def plotTrajectory(data, fileName, centerX, centerY):
     # plt.plot([west, west], [north, south], color='black')
     # plt.plot([east, east], [north, south], color='black')
 
-    plt.show()
+    # plt.show()
     plt.axis('equal')
     plt.savefig(fileName, transparent=True)
     plt.close()

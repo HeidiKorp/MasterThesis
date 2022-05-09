@@ -31,6 +31,9 @@ def main():
     # data = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed.csv", dtype='category')
 
 
+    # USE RELATIVE_X_TRANS NOT RELATIVE_X!!!!!!!!!
+
+
     # data = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg2.csv", dtype='category')
     # print("Read the data!")
     # # OneHot encode
@@ -45,42 +48,45 @@ def main():
     # data = binarizeFeature(data, 'code', 'codeBin')
 
     # # uniqueId is the trackId
-    # cols = ['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity', 'uniqueId', 'codeBin']
+    # cols = ['relative_x_trans', 'relative_y_trans', 'EgoHeadingRad', 'AbsVelocity', 'uniqueId', 'code']
     # sequence = data[cols]
-    # # print("Classes: ", sequence.codeBin.to_string().unique())
-    # # Normalize the float values
-    # norm = normalizeData(sequence[['relative_x', 'relative_y', 'EgoHeadingRad', 'AbsVelocity']])
-    # res = pd.concat([norm, sequence[['uniqueId', 'codeBin']]], ignore_index=True, axis=1)
+    # print("Classes: ", sequence.codeBin.to_string().unique())
+    # sequence = pd.read_csv("additions/datasets/april/intersections-dataset-transformed-balanced-duplicate-clean.csv", dtype='category')
+    # codes = sequence.code.unique()
+    # print("Codes: ", codes)
+    # # # # Normalize the float values
+    # norm = normalizeData(sequence[['relative_x_trans', 'relative_y_trans', 'EgoHeadingRad', 'AbsVelocity']])
+    # res = pd.concat([norm, sequence[['uniqueId', 'code']]], ignore_index=True, axis=1)
     
     
     # res.columns = cols
     # print("Res cols:\n", res.columns)
     # # res = balancedClasses(sequence, 'code')
     # # balanceDuplicating(sequence, 'code', "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate.csv", cols)
-    # # balanceDupHack(sequence, 'code', "additions/datasets/feb/ids-to-use2.txt")
-    # # getDataById(sequence, "additions/datasets/feb/ids-to-use3.txt", "additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate3.csv")
+    # balanceDupHack(sequence, 'code', "additions/datasets/april/ids-to-use.txt")
+    # getDataById(sequence, "additions/datasets/april/ids-to-use-no-text.txt", "additions/datasets/april/intersections-dataset-transformed-balanced-duplicate.csv")
     # # res.columns = cols
-    # res.to_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg-norm.csv")
+    # res.to_csv("additions/datasets/april/intersections-dataset-transformed-balanced-duplicate-norm.csv")
     # print("Normalized the data!")
 
 
-    # Norm2 is with destination
-    sequence = pd.read_csv("additions/datasets/feb/intersections-dataset-transformed-balanced-duplicate-avg-norm2.csv", dtype='category')
-    sequence = sequence[sequence.columns.drop(list(sequence.filter(regex='Unnamed')))]
+    # # # Norm2 is with destination
+    # sequence = pd.read_csv("additions/datasets/april/intersections-dataset-transformed-balanced-duplicate-norm.csv", dtype='category')
+    # sequence = sequence[sequence.columns.drop(list(sequence.filter(regex='Unnamed')))]
     # print("Cols: ", sequence.columns)
 
-    # sequence = None
-    # oneHotEncode(sequence[['destination']])
-    # Shuffle the dataset
-    # shuffled = sequence.sample(frac=1).reset_index()
-    # classes = sequence.code.unique()
-    # for c in classes:
-    #     print("Len for class ", c, " is: ", len(sequence.loc[sequence.code == c]))
+    # # sequence = None
+    # # oneHotEncode(sequence[['destination']])
+    # # Shuffle the dataset
+    # # shuffled = sequence.sample(frac=1).reset_index()
+    # # classes = sequence.code.unique()
+    # # for c in classes:
+    # #     print("Len for class ", c, " is: ", len(sequence.loc[sequence.code == c]))
 
     
-    # print("All classes: ", sequence.code.unique())
+    # # print("All classes: ", sequence.code.unique())
     
-    model = Model(sequence,   # This was in
+    model = Model('',   # This was in
                     0.5,    # dropout
                     512,    # recurrent_width
                     256,    # input_width
@@ -88,23 +94,28 @@ def main():
                     0.55,   # train size
                     0.2,    # validation size
                     0.25,   # test size
-                    5,      # network length
+                    10,      # network length
                     200,
-                    "one_layer3",
-                    False)    # epochs
-    model.set_model() # This was in
-    print("Created a model!")
+                    "one_layer",
+                    False)    # epochs normalizes data, one-hot encodes 'destination'
+    # model.set_model() # This was in
+    # print("Created a model!")
 
-    # # # model.get_model()
-    # # # model.compile_model_functional()
-    model.train() # This was in
-    print("Trained the model!")
+    # # # # model.get_model()
+    # # # # model.compile_model_functional()
+    # model.train() # This was in
+    # print("Trained the model!")
+
+    data = pd.read_csv("additions/datasets/april/intersections-dataset-transformed-balanced-duplicate-norm.csv", dtype='category')
 
     hist = model.get_history()
 
     best_model = model.get_best_saved_model()
-    model.evaluate(best_model, hist)
-    print("Evaluated!")
+
+    model.evaluateClass(best_model, hist, data)
+
+    # model.evaluate(best_model, hist)
+    # print("Evaluated!")
 
 if __name__ == "__main__":
     main()
