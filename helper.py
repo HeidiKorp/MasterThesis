@@ -238,7 +238,7 @@ def evenNrDatapoints(data, n_steps):
     for i in ids:
         # print("*** id: ", i)
         sub = data.loc[data.uniqueId == i]
-        sub = sub.drop(['uniqueId'], axis=1)
+        # sub = sub.drop(['uniqueId'], axis=1)
         sub = sub[sub.columns.drop(list(sub.filter(regex='Unnamed')))]
 
         ixs = list(sub.index)

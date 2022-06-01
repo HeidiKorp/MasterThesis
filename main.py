@@ -94,7 +94,7 @@ def main():
                     0.55,   # train size
                     0.2,    # validation size
                     0.25,   # test size
-                    10,      # network length
+                    5,      # network length
                     200,
                     "one_layer",
                     False)    # epochs normalizes data, one-hot encodes 'destination'
@@ -106,15 +106,18 @@ def main():
     # model.train() # This was in
     # print("Trained the model!")
 
-    data = pd.read_csv("additions/datasets/april/intersections-dataset-transformed-balanced-duplicate-norm.csv", dtype='category')
+    # data = pd.read_csv("additions/datasets/april/testFiles/test_orchard_10.csv", dtype='category')
+    data = pd.read_csv("additions/datasets/april/test-15.csv", dtype='category')
 
-    hist = model.get_history()
+    # hist = model.get_history()
 
     best_model = model.get_best_saved_model()
 
-    model.evaluateClass(best_model, hist, data)
+    model.evaluateNoPlot(best_model, data, 5)
+    # model.evaluateByOne(best_model, "additions/datasets/april/exitFiles/test-15-exit-3.csv", 15, "additions/datasets/april/exitFiles/test-15-exit-3-res.txt")
 
     # model.evaluate(best_model, hist)
+    # model.predict(best_model, "additions/datasets/april/test-15.csv", 15)
     # print("Evaluated!")
 
 if __name__ == "__main__":

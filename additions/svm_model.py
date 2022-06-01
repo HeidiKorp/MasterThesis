@@ -61,6 +61,24 @@ def shiftAction(inFile, outFile):
         sub.to_csv(outFile, mode='a')
         print(counter)
 
+
+def testData(testFile, exitFile=None):
+    test_data = pd.read_csv(testFile, dtype='category')
+
+    if exitFile:
+        exitData = pd.read_csv(exitFile, dtype='category')
+        
+
+
+    testY = test_data['action']
+    testX = test_data.drop(['action'], axis=1)
+    testX = testX[testX.columns.drop(list(testX.filter(regex='Unnamed')))]
+    print("Test X cols: ", testX.columns)
+    clf = loadModel("svmModel/svmModel.sav")
+    print("Loaded model")
+    scores = cross_val_score(clf, testX, testY, cv=5)
+    print("%0.2f accuracy with a standard deviation of %0.2f" % (scores.mean(), scores.std()))
+
     
 def main():
     # shiftAction("datasets/feb/training/training-peers-rich.csv", "datasets/feb/training/training-peers-rich-futAction.csv")
@@ -68,29 +86,30 @@ def main():
     # validation_data = pd.read_csv("datasets/feb/training/validation-peers-split.csv")
     # test_data = pd.read_csv("datasets/feb/training/test-peers-split.csv")
 
-    train_data = pd.read_csv("datasets/feb/training/training-peers-split-futAction.csv")
-    validation_data = pd.read_csv("datasets/feb/training/validation-peers-split-futAction.csv")
-    test_data = pd.read_csv("datasets/feb/training/test-peers-split-futAction.csv")
+    # train_data = pd.read_csv("datasets/feb/training/training-peers-split-futAction.csv")
+    # validation_data = pd.read_csv("datasets/feb/training/validation-peers-split-futAction.csv")
+    # test_data = pd.read_csv("datasets/feb/training/test-peers-split-futAction.csv")
 
-    train_data = pd.concat([train_data, validation_data], ignore_index=True)
+    # train_data = pd.concat([train_data, validation_data], ignore_index=True)
 
-    # Normalize the data
-    # Split into X and y
-    # train_y = oneHotEncode(train_data[['action']])
-    train_y = train_data['futAction']
-    # print("Train cols: ", train_data.columns)
-    train_data = train_data.drop(columns='futAction')
-    train_data = normalizeData(train_data)
-    # print(train_data.head())
+    # # Normalize the data
+    # # Split into X and y
+    # # train_y = oneHotEncode(train_data[['action']])
+    # train_y = train_data['futAction']
+    # # print("Train cols: ", train_data.columns)
+    # train_data = train_data.drop(columns='futAction')
+    # train_data = normalizeData(train_data)
+    # # print(train_data.head())
 
-    # test_y = oneHotEncode(test_data[['action']])
-    test_y = test_data['futAction']
-    test_data = test_data.drop(columns='futAction')
-    test_data = normalizeData(test_data)
+    # # test_y = oneHotEncode(test_data[['action']])
+    # test_y = test_data['futAction']
+    # test_data = test_data.drop(columns='futAction')
+    # test_data = normalizeData(test_data)
 
-    # Normalize train and test X
+    # # Normalize train and test X
 
-    trainSVM(train_data, train_y, test_data, test_y, "svmModel2/")
+    # trainSVM(train_data, train_y, test_data, test_y, "svmModel2/")
+    test_data = pd.read_csv("datasets/april/testFiles/SVMtest_orchard.csv")
 
 
     

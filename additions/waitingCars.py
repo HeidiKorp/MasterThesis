@@ -346,9 +346,9 @@ def main():
     # getNotWaitIds('datasets/waiting-thresh.csv', "datasets/intersections-dataset-before-thresh.csv", "datasets/not-waiting-ids2.csv")
     # sumMean = getAverageVelocity("datasets/intersections-dataset-before-thresh.csv")
     saveWaitingSlowingSpeedingRecords("datasets/feb/intersections-dataset-before.csv", 
-                                    "datasets/feb/waiting-before-thresh.csv",
-                                    "datasets/feb/slowing-before-thresh.csv",
-                                    "datasets/feb/speeding-before-thresh.csv")
+                                    "datasets/april/waiting-before-thresh.csv",
+                                    "datasets/april/slowing-before-thresh.csv",
+                                    "datasets/april/speeding-before-thresh.csv")
     # testLeftJoin()
     # print("Abs: ", sumMean)
     # checkOverlapping("datasets/speeding-before-thresh.csv", "datasets/waiting-before-thresh.csv")

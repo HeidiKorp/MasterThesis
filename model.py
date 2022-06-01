@@ -13,6 +13,7 @@ from math import floor
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
 from sklearn.utils import shuffle
+from sklearn.metrics import accuracy_score
 import random
 
 from helper import get_train_val_test, split_sequences, oneHotEncode, stepsToOne, reshapeData, codeToDest, normalizeData, split_tracks, evenNrDatapoints
@@ -85,43 +86,44 @@ class Model:
             self.val_data.to_csv("additions/datasets/april/validation.csv")
             self.test_data.to_csv("additions/datasets/april/test.csv")
 
-        self.train_data = pd.read_csv("additions/datasets/april/train.csv", dtype='category')
-        self.val_data = pd.read_csv("additions/datasets/april/validation.csv", dtype='category')
-        self.test_data = pd.read_csv("additions/datasets/april/test.csv", dtype='category')
-        print("Read data files!")
+        # self.train_data = pd.read_csv("additions/datasets/april/train.csv", dtype='category')
+        # self.val_data = pd.read_csv("additions/datasets/april/validation.csv", dtype='category')
+        # self.test_data = pd.read_csv("additions/datasets/april/test.csv", dtype='category')
+        # print("Read data files!")
 
-        # Even out the tracks
-        # print("TRain data shape: ", self.train_data.shape)
-        self.train_data = evenNrDatapoints(self.train_data, self.network_length)
-        print("Train file cols: ", self.train_data.columns)
-        print("Evened train file!")
-        self.val_data = evenNrDatapoints(self.val_data, self.network_length)
-        print("Evened val file")
-        self.test_data = evenNrDatapoints(self.test_data, self.network_length)
-        print("Evened test file")
-        print("X train shape: ", self.train_data.shape)
+        # # Even out the tracks
+        # # print("TRain data shape: ", self.train_data.shape)
+        # self.train_data = evenNrDatapoints(self.train_data, self.network_length)
+        # print("Train file cols: ", self.train_data.columns)
+        # print("Evened train file!")
+        # self.val_data = evenNrDatapoints(self.val_data, self.network_length)
+        # print("Evened val file")
+        # self.test_data = evenNrDatapoints(self.test_data, self.network_length)
+        # print("Evened test file")
+        # print("X train shape: ", self.train_data.shape)
 
-        # Save evened-out datasets
-        self.train_data.to_csv("additions/datasets/april/train-" + str(self.network_length) + ".csv", index=False)
-        self.val_data.to_csv("additions/datasets/april/validation-" + str(self.network_length) + ".csv", index=False)
-        self.test_data.to_csv("additions/datasets/april/test-" + str(self.network_length) + ".csv", index=False)
+        # # Save evened-out datasets
+        # self.train_data.to_csv("additions/datasets/april/train-" + str(self.network_length) + ".csv", index=False)
+        # self.val_data.to_csv("additions/datasets/april/validation-" + str(self.network_length) + ".csv", index=False)
+        # self.test_data.to_csv("additions/datasets/april/test-" + str(self.network_length) + ".csv", index=False)
 
         # # Read saved evened-out datasets
         # self.train_data = pd.read_csv("additions/datasets/april/train-" + str(self.network_length) + ".csv", dtype='category')
         # self.val_data = pd.read_csv("additions/datasets/april/validation-" + str(self.network_length) + ".csv", dtype='category')
         # self.test_data = pd.read_csv("additions/datasets/april/test-" + str(self.network_length) + ".csv", dtype='category')
 
-        self.train_data = self.train_data[self.train_data.columns.drop(list(self.train_data.filter(regex='Unnamed')))]
-        self.val_data = self.val_data[self.val_data.columns.drop(list(self.val_data.filter(regex='Unnamed')))]
-        self.test_data = self.test_data[self.test_data.columns.drop(list(self.test_data.filter(regex='Unnamed')))]
+        # self.train_data = self.train_data[self.train_data.columns.drop(list(self.train_data.filter(regex='Unnamed')))]
+        # self.val_data = self.val_data[self.val_data.columns.drop(list(self.val_data.filter(regex='Unnamed')))]
+        # self.test_data = self.test_data[self.test_data.columns.drop(list(self.test_data.filter(regex='Unnamed')))]
 
-        self.train_data = self.train_data.drop(['uniqueId'], axis=1)
-        self.val_data = self.val_data.drop(['uniqueId'], axis=1)
-        self.test_data = self.test_data.drop(['uniqueId'], axis=1)
+        # self.train_data = self.train_data.drop(['uniqueId'], axis=1)
+        # self.val_data = self.val_data.drop(['uniqueId'], axis=1)
+        # self.test_data = self.test_data.drop(['uniqueId'], axis=1)
+        # print("Train data cols: ", self.train_data.columns)
 
-        self.train_data = self.train_data.to_numpy()
-        self.val_data = self.val_data.to_numpy()
-        self.test_data = self.test_data.to_numpy()
+        # self.train_data = self.train_data.to_numpy()
+        # self.val_data = self.val_data.to_numpy()
+        # self.test_data = self.test_data.to_numpy()
 
         # print(self.train_data.columns)
 
@@ -130,24 +132,24 @@ class Model:
         # # # print(self.train_data[:3])
         # # print(self.train_data[:3, :3])
 
-        self.X_train, self.y_train = self.train_data[:, :-y_col_nr-1], self.train_data[:, -y_col_nr:]
-        self.X_val, self.y_val = self.val_data[:, :-y_col_nr-1], self.val_data[:, -y_col_nr:]
-        self.X_test, self.y_test = self.test_data[:, :-y_col_nr-1], self.test_data[:, -y_col_nr:]
+        # self.X_train, self.y_train = self.train_data[:, :-y_col_nr], self.train_data[:, -y_col_nr:]
+        # self.X_val, self.y_val = self.val_data[:, :-y_col_nr], self.val_data[:, -y_col_nr:]
+        # self.X_test, self.y_test = self.test_data[:, :-y_col_nr], self.test_data[:, -y_col_nr:]
         
-        print(self.X_train[:5])
-        print(self.y_train[:5])
-        # Numpy reshape
-        self.X_train = reshapeData(self.X_train, self.network_length)
-        self.y_train = reshapeData(self.y_train, self.network_length)
+        # # print(self.X_train[:5])
+        # # print(self.y_train[:5])
+        # # Numpy reshape
+        # self.X_train = reshapeData(self.X_train, self.network_length)
+        # self.y_train = reshapeData(self.y_train, self.network_length)
 
-        self.X_val = reshapeData(self.X_val, self.network_length)
-        self.y_val = reshapeData(self.y_val, self.network_length)
+        # self.X_val = reshapeData(self.X_val, self.network_length)
+        # self.y_val = reshapeData(self.y_val, self.network_length)
 
-        self.X_test = reshapeData(self.X_test, self.network_length)
-        self.y_test = reshapeData(self.y_test, self.network_length)
+        # self.X_test = reshapeData(self.X_test, self.network_length)
+        # self.y_test = reshapeData(self.y_test, self.network_length)
         
-        print("X train shape: ", self.X_train.shape)
-        print("y train shape: ", self.y_train.shape)
+        # print("X train shape: ", self.X_train.shape)
+        # print("y train shape: ", self.y_train.shape)
         # # self.X_train, self.y_train = self.reshape_input(self.train_data, network_length)
         # # self.X_val, self.y_val = self.reshape_input(self.val_data, network_length)
         # # self.X_test, self.y_test = self.reshape_input(self.test_data, network_length)
@@ -158,21 +160,6 @@ class Model:
 
         # # print("Val head: \n", self.X_val[:3])
 
-        # # print("TrainX: \n", type(self.X_train))
-        # # print(self.X_train[:3])
-        # # print("Train y:\n", type(self.y_train))
-        # # print(self.y_train[:3])
-        
-        # # X = data.to_numpy()
-        # # X = X[:,:-1]
-        # # print("X shape: ", X.shape)
-        # # print("Len X: ", len(X))
-        # # a = X.shape[0] // self.network_length
-        # # b = a * self.network_length
-        # # X = np.reshape(X[:b], (a, self.network_length, X.shape[1]))
-        # # y = np.reshape(onehots[:b], (a, self.network_length, onehots.shape[1]))
-        # # X, y = shuffle(np.array(X), np.array(y))
-        # # print("Shape X: \n", X.shape)
 
         # # print("Hots: \n", onehots.head())
         # # data = pd.concat([data.reset_index(), onehots.reset_index()], axis=1)
@@ -202,14 +189,14 @@ class Model:
         # # self.X_train, self.X_val, self.y_train, self.y_val \
         # #         = train_test_split(self.X_train, self.y_train, test_size=validation_size, random_state=1)
 
-        self.X_train=np.asarray(self.X_train).astype(np.float)
-        self.y_train=np.asarray(self.y_train).astype(np.float)
+        # self.X_train=np.asarray(self.X_train).astype(np.float)
+        # self.y_train=np.asarray(self.y_train).astype(np.float)
 
-        self.X_val=np.asarray(self.X_val).astype(np.float)
-        self.y_val=np.asarray(self.y_val).astype(np.float)
+        # self.X_val=np.asarray(self.X_val).astype(np.float)
+        # self.y_val=np.asarray(self.y_val).astype(np.float)
 
-        self.X_test=np.asarray(self.X_test).astype(np.float)
-        self.y_test=np.asarray(self.y_test).astype(np.float)
+        # self.X_test=np.asarray(self.X_test).astype(np.float)
+        # self.y_test=np.asarray(self.y_test).astype(np.float)
 
         
         # # self.train_data, self.val_data, self.test_data = \
@@ -335,26 +322,42 @@ class Model:
         return history
 
 
-    def predict(self, model, n_samples):
+    def predict(self, model, dataFile, netLen):
+        data = pd.read_csv(dataFile, dtype='category')
+        y_col_nr = len(codeToDest)
+        data = data[data.columns.drop(list(data.filter(regex='Unnamed')))]
+        data = data.drop(['uniqueId'], axis=1)
+        print("Cols: ", data.columns)
+
+        data = data.to_numpy()
+
+        X_test, y_test = data[:, :-y_col_nr], data[:, -y_col_nr:]
+        X_test=np.asarray(X_test).astype(np.float)
+        y_test=np.asarray(y_test).astype(np.float)
+        X_test = reshapeData(X_test, netLen)
+        y_test = reshapeData(y_test, netLen)
         # Generate predictions (probabilities -- the output of the last layer)
         # on new data using 'predict'
-        print("Generate predictions for %s samples" % (n_samples))
-        predictions = model.predict(self.X_test[:n_samples])
+        # print("Generate predictions for %s samples" % (n_samples))
+        # predictions = model.predict(self.X_test[:n_samples])
+        predictions = model.predict(X_test)
         # actual = self.y_test[:n_samples]
         # print("Predicted: ", predictions)
         # print("Actual: ", actual)
             # Converting predictions to label
         pred = list()
         for i in range(len(predictions)):
-            pred.append(np.argmax(y_pred[i]))
+            pred.append(np.argmax(y_test[i]))
 
         # Converting one hot encoded test label to label
         test = list()
-        for i in range(len(self.y_test[:n_samples])):
-            test.append(np.argmax(self.y_test[:n_samples][i]))
+        for i in range(len(y_test)):
+            test.append(np.argmax(y_test[i]))
+        # for i in range(len(self.y_test[:n_samples])):
+        #     test.append(np.argmax(self.y_test[:n_samples][i]))
         
-        print("Result: ", test[4895:4900])
-        print("Y_test: ", pred[4895:4900])
+        # print("Result: ", test[4895:4900])
+        # print("Y_test: ", pred[4895:4900])
         # Get accuracy
         a = accuracy_score(test, pred)
         print("Accuracy is: ", a * 100)
@@ -369,18 +372,83 @@ class Model:
         return split_sequences(X, k, idx_obj_id)
 
 
-    def evaluateClass(self, model, history, data):
+    def evaluateNoPlot(self, model, data, netLen):
+        y_col_nr = len(codeToDest)
         data = data[data.columns.drop(list(data.filter(regex='Unnamed')))]
-        data.drop(['uniqueId'], axis=1)
-        print(data.columns)
+        data = data.drop(['uniqueId'], axis=1)
+        print("Cols: ", data.columns)
 
+        data = data.to_numpy()
 
-    def evaluateNoPlot(self, model, history, X_test, Y_test):
-        _, test_acc = model.evaluate(X_test, Y_test, verbose=0)
+        X_test, y_test = data[:, :-y_col_nr], data[:, -y_col_nr:]
+        X_test=np.asarray(X_test).astype(np.float)
+        y_test=np.asarray(y_test).astype(np.float)
+        X_test = reshapeData(X_test, netLen)
+        y_test = reshapeData(y_test, netLen)
+        print("X shape: ", X_test.shape)
+        _, test_acc = model.evaluate(X_test, y_test, verbose=0)
         print("Test acc: %.3f" % (test_acc))
-        print("Loss: ", history['loss'])
-        print("Val loss: ", history['val_loss'])
+        # print("Loss: ", history['loss'])
+        # print("Val loss: ", history['val_loss'])
 
+
+    def evaluateByOne(self, model, dataFile, netLen, outFile):
+        data = pd.read_csv(dataFile, dtype='category')
+        out_file = open(outFile, 'a')
+        print("Read data!")
+        y_col_nr = len(codeToDest)
+        data = data[data.columns.drop(list(data.filter(regex='Unnamed')))]
+        ids = data.uniqueId.unique()
+        nr_ids = len(ids)
+
+        for id in range(nr_ids):
+        # id = ids[1]
+            sub = data.loc[data.uniqueId == ids[id]]
+            sub = sub.drop(['uniqueId'], axis=1)
+            sub = sub.to_numpy()
+
+            X_test, y_test = sub[:, :-y_col_nr], sub[:, -y_col_nr:]
+            X_test = np.asarray(X_test).astype(np.float)
+            y_test = np.asarray(y_test).astype(np.float)
+            X_test = reshapeData(X_test, netLen)
+            y_test = reshapeData(y_test, netLen)[0]
+            # print("y test is:\n", y_test)
+
+            true_val = np.argmax(y_test)
+            preds = []
+            # i = X_test[-1]
+            for i in X_test:
+                i = np.reshape(i, (1, i.shape[0], i.shape[1]))
+                a = model.predict_step(i)
+                a = a.numpy()[0]
+                b = np.zeros_like(a)
+                b[np.arange(len(a)), a.argmax(1)] = 1
+
+                # print("Predicted: \n", b)
+                # print("Same? ", np.array_equal(b, y_test))
+                # print("Max val: ", np.argmax(b, axis=1)[0])
+                preds.append(np.argmax(b, axis=1)[0])
+
+            # preds = [4, 4, 4, 4, 4]
+            last_false_pred = np.where(preds != true_val)[0]
+
+            if last_false_pred.size == 0:
+                last_false_pred = -1
+            else:
+                last_false_pred = last_false_pred[-1]
+            nr_preds = len(preds)
+            print("Last false: ", last_false_pred, nr_preds-1, " ", id, "/", nr_ids)
+            
+            res = [ids[id], true_val, last_false_pred, nr_preds-1, "---"] + preds  
+            res = [str(x) for x in res]
+            res = ','.join(res) + "\n"
+            out_file.write(res)
+        out_file.close()
+
+        # res = model.predict_on_batch(X_test)
+        # print("Batch preds:\n", res)
+        # print("Y vals: \n", y_test)
+            # break
 
 
     def evaluate(self, model, history, data):
@@ -414,4 +482,5 @@ class Model:
         return load_model("additions/datasets/april/" + self.fileName + "_" + str(self.network_length) + "/best_model_destination_" + str(self.network_length) + ".h5")
 
     def get_history(self):
+        print("additions/datasets/april/" + self.fileName + "_" + str(self.network_length) + "/history_" + str(self.network_length) + ".json")
         return pd.read_json("additions/datasets/april/" + self.fileName + "_" + str(self.network_length) + "/history_" + str(self.network_length) + ".json", orient='records')

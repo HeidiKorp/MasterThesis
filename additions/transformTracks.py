@@ -220,15 +220,15 @@ def transformDataLines(fileName, outFile):
 def plotData(data, saveName, csvName):
     # data = pd.read_csv(fileName, dtype='category')
     # data = data.loc[(data.csv_name.str.contains("leith")) & (data.origin == 'north')]
-    data = data.loc[(data.csv_name.str.contains(csvName))]
-    ids = data.uniqueId.unique()
-    ids = ids[:10]
+    # data = data.loc[(data.csv_name.str.contains(csvName))]
+    # ids = data.uniqueId.unique()
+    # ids = ids[:10]
     # ids = ['3', '4', '39', '51', '72', '82', '97', '112', '134', '138', '153', '159', '162', '198', '258', '280', '287', '295', '296', '323']
     # print("Ids total: ", len(data.uniqueId.unique()))
     # ids = list(data.uniqueId.unique())[:20]
     # print("Ids: ", ids)
-    data = data.loc[data.apply(lambda x: x.uniqueId in ids, axis=1, result_type='expand')]
-    print("Read data!")
+    # data = data.loc[data.apply(lambda x: x.uniqueId in ids, axis=1, result_type='expand')]
+    # print("Read data!")
     centerX, centerY = getCenterPoint()
     plotTrajectory(data, saveName, centerX, centerY)
 
@@ -237,7 +237,7 @@ def plotData(data, saveName, csvName):
 def main():
     # plotTransformed("oliver05.csv", 
     #             "oliver", 
-    #             '../plots/Oliver05Before2.png')
+    #             '../plots/Oliver05Before22.png')
     # plotTransformed("../../records/records_485000-490000.csv", 
     #                 "leith-croydon", 
     #                 '../plots/LeithTracksThresh.png')
@@ -294,13 +294,13 @@ def main():
     # getFurthestThrest("datasets/testing/leith.csv")
     # alignTracksClosestStart("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/intersections-dataset-transformed-aligned.csv")
     # plotData("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/leith-north-not-aligned.png")
-    beforeFile = "datasets/feb/intersections-dataset-before.csv"
-    transFile = "datasets/feb/intersections-dataset-transformed.csv"
+    # beforeFile = "datasets/feb/intersections-dataset-before.csv"
+    # transFile = "datasets/feb/intersections-dataset-transformed.csv"
 
-    transData = pd.read_csv(transFile, dtype='category')
-    beforeData = pd.read_csv(beforeFile, dtype='category')
-    plotData(beforeData, "datasets/feb/plots/queen-before.png", 'queen')
-    plotData(transData, "datasets/feb/plots/queen-trans.png", 'queen')
+    # transData = pd.read_csv(transFile, dtype='category')
+    # # beforeData = pd.read_csv(beforeFile, dtype='category')
+    # # plotData(beforeData, "datasets/feb/plots/queen-before.png", 'queen')
+    # plotData(transData, "datasets/april/plots/surrounds-intersect2.png", '')
 
 if __name__ == "__main__":
     main()
