@@ -295,12 +295,14 @@ def main():
     # alignTracksClosestStart("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/intersections-dataset-transformed-aligned.csv")
     # plotData("datasets/feb/intersections-dataset-transformed.csv", "datasets/feb/leith-north-not-aligned.png")
     # beforeFile = "datasets/feb/intersections-dataset-before.csv"
-    # transFile = "datasets/feb/intersections-dataset-transformed.csv"
+    transFile = "datasets/feb/intersections-dataset-transformed.csv"
 
-    # transData = pd.read_csv(transFile, dtype='category')
+    transData = pd.read_csv(transFile, dtype='category')
     # # beforeData = pd.read_csv(beforeFile, dtype='category')
     # # plotData(beforeData, "datasets/feb/plots/queen-before.png", 'queen')
     # plotData(transData, "datasets/april/plots/surrounds-intersect2.png", '')
+    # data = pd.read_csv("datasets/intersections-dataset.csv", dtype='category')
+    plotData(transData, "datasets/april/plots/leith-10-rotate.png", 'leith')
 
 if __name__ == "__main__":
     main()

@@ -96,101 +96,41 @@ def plotTrajectory(data, fileName, centerX, centerY):
     # colors = cm.rainbow(np.linspace(0, 1, len(ids)))
 
 
+    
+    ids = data.uniqueId.unique()
+    if (len(ids) > 10):
+        ids = ids[:10]
+    print("Ids are: ", ids)
+    colors = cm.rainbow(np.linspace(0, 1, len(ids)))
+
     # for i in range(len(ids)):
     for i in range(len(ids)):
         sub = data.loc[data['uniqueId'] == ids[i]]
-        print("Csv: ", sub.csv_name.unique())
-
-        # if len(timestamps) == 0:
-        #     timestamps = sub.Timestamp.unique()
-        # else:
-        #     steps = set(timestamps)
-        #     res = steps.intersection(sub.Timestamp)
-        #     timestamps = list(res)
         # Mark the first location
-        xS = round(float(sub.iloc[1]['relative_x_trans']), 8)
-        yS = round(float(sub.iloc[1]['relative_y_trans']), 8)
+        # xS = round(float(sub.iloc[1]['relative_x_trans']), 8)
+        # yS = round(float(sub.iloc[1]['relative_y_trans']), 8)
         # plt.plot(xS, yS, color='blue', marker="o")
         # Round all the coordinates
-        # x = round(sub['relative_x_trans'].astype(float), 3)
-        # y = round(sub['relative_y_trans'].astype(float), 3)
-
-        # vel_x = round(sub['RelVelocity_X'].astype(float), 3)
-        # vel_y = round(sub['RelVelocity_Y'].astype(float), 3)
-
-        # waits_x, waits_y = [], []
-        # speeds_x, speeds_y = [], []
-        # slows_x, slows_y = [], []
-
-        # for j, k, m, n in zip(vel_x, vel_y, x, y):
-        #     # print(j, k)
-        #     summa = abs(j) + abs(k)
-
-        #     if j == 0 or k == 0:
-        #         # print("Waiting!")
-        #         waits_x.append(m)
-        #         waits_y.append(n)
-        #     elif summa < 7.22:
-        #         slows_x.append(m)
-        #         slows_y.append(n)
-        #     else:
-        #         speeds_x.append(m)
-        #         speeds_y.append(n)
-
-        # print("Match? ", len(vel_x), len(waits_x) + len(slows_x) + len(speeds_x))
-
+        # x = round(sub['relative_x'].astype(float), 3)
+        # y = round(sub['relative_y'].astype(float), 3)
+        x = round(sub['relative_x_trans'].astype(float), 3)
+        y = round(sub['relative_y_trans'].astype(float), 3)
 
 
         # # Mark the first location
-        xS = round(float(sub.iloc[1]['relative_x']), 8)
-        yS = round(float(sub.iloc[1]['relative_y']), 8)
+        # xS = round(float(sub.iloc[1]['relative_x']), 8)
+        # yS = round(float(sub.iloc[1]['relative_y']), 8)
         # plt.plot(xS, yS, color='blue', marker="o")
         # # Round all the coordinates
-        x = round(sub['relative_x'].astype(float), 3)
-        y = round(sub['relative_y'].astype(float), 3)
+        # x = round(sub['relative_x'].astype(float), 3)
+        # y = round(sub['relative_y'].astype(float), 3)
 
-        plt.scatter(xS, yS, s=20, color=colors[i])
-        plt.scatter(x,y, color=colors[i], s=5)
-
-        
-        # plt.scatter(speeds_x, speeds_y, color='green', s=2)
-        # plt.scatter(slows_x, slows_y, color='orange', s=2)
-        # plt.scatter(waits_x, waits_y, color='red', s=4)
-        # plt.scatter(x,y, color=colors[i], s=3)
+        # plt.scatter(xS, yS, s=20, color=colors[i])
+        # plt.scatter(x,y, color=colors[i], s=5)
+        plt.scatter(x,y, color=colors[i], s=3)
         plt.axis('equal')
         # plt.plot(x,y, color=colors[i])
     plt.plot(centerX, centerY, color='red', marker="o")
-    
-    # print("Timestamps are: ", timestamps)
-    # steps = data.loc[np.isin(data['Timestamp'].to_numpy(), timestamps)]
-
-    # relX = list(round(steps.relative_x_trans.astype(float), 3))
-    # relY = list(round(steps.relative_y_trans.astype(float), 3))
-    # print("RelX:\n", relX)
-    # print("RelY:\n", relY)
-
-    sub_1 = data.loc[data.uniqueId == ids[0]]
-    sub_2 = data.loc[data.uniqueId == ids[1]]
-    sub_3 = data.loc[data.uniqueId == ids[2]]
-
-    times_1 = sub_1.Timestamp.unique()
-    times_2 = sub_2.Timestamp.unique()
-    times_3 = sub_3.Timestamp.unique()
-    print("Times 1:\n", times_1[:5])
-
-    times = set(times_1).intersection(times_2)
-    times = list(times)
-    print("First intersect: ", times)
-    times_all = set(times).intersection(times_3)
-    times_all = list(times_all)
-
-    sub_inter = data[np.isin(data['Timestamp'].to_numpy(), times_all)]
-    relX = round(sub_inter.relative_x_trans.astype(float), 3)
-    relY = round(sub_inter.relative_y_trans.astype(float), 3)
-
-    print("RelX:\n", relX)
-    print("RelY:\n", relY)
-    plt.scatter(relX, relY, color='black', s=2)
 
     # north, south, east, west = thresholds
     # plt.plot([west, east], [south, south], color='black')

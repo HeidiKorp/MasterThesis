@@ -20,7 +20,8 @@ def oneHotEncode(data):
 
 def trainSVM(trainX, trainY, testX, testY, saveFolder):
     # https://stackoverflow.com/questions/58074021/training-svc-from-scikit-learn-shows-that-using-h-0-may-be-faster
-    clf = svm.SVC(verbose=True, shrinking=False, kernel='linear').fit(trainX, trainY)
+    # clf = svm.SVC(verbose=True, shrinking=False, kernel='linear').fit(trainX, trainY)
+    clf = svm.LinearSVC(verbose=True).fit(trainX, trainY)
 
     # Save the model
     pickle.dump(clf, open(saveFolder + "svmModel-linear.sav", 'wb'))
@@ -86,30 +87,34 @@ def main():
     # validation_data = pd.read_csv("datasets/feb/training/validation-peers-split.csv")
     # test_data = pd.read_csv("datasets/feb/training/test-peers-split.csv")
 
-    # train_data = pd.read_csv("datasets/feb/training/training-peers-split-futAction.csv")
-    # validation_data = pd.read_csv("datasets/feb/training/validation-peers-split-futAction.csv")
-    # test_data = pd.read_csv("datasets/feb/training/test-peers-split-futAction.csv")
+    train_data = pd.read_csv("datasets/feb/training/training-peers-split-futAction.csv")
+    validation_data = pd.read_csv("datasets/feb/training/validation-peers-split-futAction.csv")
+    test_data = pd.read_csv("datasets/feb/training/test-peers-split-futAction.csv")
 
-    # train_data = pd.concat([train_data, validation_data], ignore_index=True)
+    # train_data = pd.read_csv("datasets/feb/training/training-peers-split-futAction-novel.csv")
+    # validation_data = pd.read_csv("datasets/feb/training/validation-peers-split-futAction-novel.csv")
+    # test_data = pd.read_csv("datasets/feb/training/test-peers-split-futAction-novel.csv")
 
-    # # Normalize the data
-    # # Split into X and y
-    # # train_y = oneHotEncode(train_data[['action']])
-    # train_y = train_data['futAction']
-    # # print("Train cols: ", train_data.columns)
-    # train_data = train_data.drop(columns='futAction')
-    # train_data = normalizeData(train_data)
-    # # print(train_data.head())
+    train_data = pd.concat([train_data, validation_data], ignore_index=True)
 
-    # # test_y = oneHotEncode(test_data[['action']])
-    # test_y = test_data['futAction']
-    # test_data = test_data.drop(columns='futAction')
-    # test_data = normalizeData(test_data)
+    # Normalize the data
+    # Split into X and y
+    # train_y = oneHotEncode(train_data[['action']])
+    train_y = train_data['futAction']
+    # print("Train cols: ", train_data.columns)
+    train_data = train_data.drop(columns='futAction')
+    train_data = normalizeData(train_data)
+    # print(train_data.head())
 
-    # # Normalize train and test X
+    # test_y = oneHotEncode(test_data[['action']])
+    test_y = test_data['futAction']
+    test_data = test_data.drop(columns='futAction')
+    test_data = normalizeData(test_data)
 
-    # trainSVM(train_data, train_y, test_data, test_y, "svmModel2/")
-    test_data = pd.read_csv("datasets/april/testFiles/SVMtest_orchard.csv")
+    # Normalize train and test X
+
+    trainSVM(train_data, train_y, test_data, test_y, "svmModel2-re2/")
+    # test_data = pd.read_csv("datasets/april/testFiles/SVMtest_orchard.csv")
 
 
     

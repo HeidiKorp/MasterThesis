@@ -96,58 +96,68 @@ def filterOutHeader(inFile, outFile):
     data.to_csv(outFile)
 
 
+def removeVel(fileIn, fileOut):
+    data = pd.read_csv(fileIn, dtype='category')
+    data = data[data.columns.drop(['EgoHeadingRad', 'RelVelocity_X', 'RelVelocity_Y'])]
+    data = data[data.columns.drop(list(data.filter(regex='Unnamed')))]
+    data.to_csv(fileOut)
+
 def main():
-    # data = pd.read_csv("datasets/feb/slowing-thresh-peers-action.csv")
-    # data = applyPeerCount(data)
-    # data.to_csv("datasets/feb/slowing-thresh-peers-count.csv")
-
-    # wait_data = pd.read_csv("datasets/feb/waiting-thresh-peers-count.csv")
-    # speeding_data = pd.read_csv("datasets/feb/speeding-thresh-peers-count.csv")
-    # slowing_data = pd.read_csv("datasets/feb/slowing-thresh-peers-count.csv")
-
-    # max_wait_peers = wait_data['peerCount'].max()
-    # max_speed_peers = speeding_data['peerCount'].max()
-    # max_slow_peers = speeding_data['peerCount'].max()
-
-    # print("Max peers in wait: ", max_wait_peers)
-    # print("Max peers in speed: ", max_speed_peers)
-    # print("Max peers in slow: ", max_slow_peers)
-
-    # Max peers is 3
+    removeVel("datasets/feb/training/training-peers-split-futAction.csv", "datasets/feb/training/training-peers-split-futAction-novel.csv")
 
 
-    data = pd.read_csv("datasets/feb/training/test-peers-rich-futAction-no-head.csv")
-    # wait_data = wait_data[11138:11148] # 2 peers
-    # wait_data = wait_data[:5] # 0 peers
-    # wait_data = wait_data[1233:1243] # 1 peer
+    # # data = pd.read_csv("datasets/feb/slowing-thresh-peers-action.csv")
+    # # data = applyPeerCount(data)
+    # # data.to_csv("datasets/feb/slowing-thresh-peers-count.csv")
 
-    def lambdafunc(row): return peersToFeatures(
-                                row['relative_x_trans'], row['relative_y_trans'], 
-                                row['EgoHeadingRad'], row['RelVelocity_X'], row['RelVelocity_Y'],
-                                row['PeerX'], row['PeerY'], 
-                                row['PeerRelVelX'], row['PeerRelVelY'])
+    # # wait_data = pd.read_csv("datasets/feb/waiting-thresh-peers-count.csv")
+    # # speeding_data = pd.read_csv("datasets/feb/speeding-thresh-peers-count.csv")
+    # # slowing_data = pd.read_csv("datasets/feb/slowing-thresh-peers-count.csv")
 
-    res = pd.DataFrame()
-    res = data.apply(lambdafunc, axis=1)
-    cols = getPeerCols(3, ['PeerX', 'PeerY', 'PeerRelVelX', 'PeerRelVelY'])
-    res.columns = ['relative_x_trans', 'relative_y_trans', 'EgoHeadingRad', 'RelVelocity_X', 'RelVelocity_Y'] + cols
-    res = addAction(res)
+    # # max_wait_peers = wait_data['peerCount'].max()
+    # # max_speed_peers = speeding_data['peerCount'].max()
+    # # max_slow_peers = speeding_data['peerCount'].max()
 
-    # res = pd.concat([data[['relative_x_trans', 'relative_y_trans', 'EgoHeadingRad', 'RelVelocity_X', 'RelVelocity_Y']], peers], ignore_index=True)
+    # # print("Max peers in wait: ", max_wait_peers)
+    # # print("Max peers in speed: ", max_speed_peers)
+    # # print("Max peers in slow: ", max_slow_peers)
 
-    res.to_csv("datasets/feb/training/test-peers-split-futAction.csv")
-
-    # Get a dataset where peer and orig data have been combined!
+    # # Max peers is 3
 
 
-    # Next:
-    # Remove uniqueId and peer timestamp from the result (they were added for debugging)
-    # Run the script above for every file
-    # Save the nr of longest columns (max nr of peers)
+    # data = pd.read_csv("datasets/feb/training/test-peers-rich-futAction-no-head.csv")
+    # # wait_data = wait_data[11138:11148] # 2 peers
+    # # wait_data = wait_data[:5] # 0 peers
+    # # wait_data = wait_data[1233:1243] # 1 peer
 
-    # For all rows where nr of peers is less than that:
-        # Add dummy data where x and y are the same as ego vehicle
-        # and speed is 0
+    # def lambdafunc(row): return peersToFeatures(
+    #                             row['relative_x_trans'], row['relative_y_trans'], 
+    #                             row['EgoHeadingRad'], row['RelVelocity_X'], row['RelVelocity_Y'],
+    #                             row['PeerX'], row['PeerY'], 
+    #                             row['PeerRelVelX'], row['PeerRelVelY'])
+
+    # res = pd.DataFrame()
+    # res = data.apply(lambdafunc, axis=1)
+    # cols = getPeerCols(3, ['PeerX', 'PeerY', 'PeerRelVelX', 'PeerRelVelY'])
+    # res.columns = ['relative_x_trans', 'relative_y_trans', 'EgoHeadingRad', 'RelVelocity_X', 'RelVelocity_Y'] + cols
+    # res = addAction(res)
+
+    # # res = pd.concat([data[['relative_x_trans', 'relative_y_trans', 'EgoHeadingRad', 'RelVelocity_X', 'RelVelocity_Y']], peers], ignore_index=True)
+
+    # res.to_csv("datasets/feb/training/test-peers-split-futAction.csv")
+
+    # # Get a dataset where peer and orig data have been combined!
+
+
+    # # Next:
+    # # Remove uniqueId and peer timestamp from the result (they were added for debugging)
+    # # Run the script above for every file
+    # # Save the nr of longest columns (max nr of peers)
+
+    # # For all rows where nr of peers is less than that:
+    #     # Add dummy data where x and y are the same as ego vehicle
+    #     # and speed is 0
+
     
 
 
